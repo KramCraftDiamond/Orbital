@@ -1,0 +1,65 @@
+## Node / package managers
+node_modules/
+.pnp/
+.pnp.js
+/.pnp.cjs
+
+# pnpm
+node_modules/.pnpm/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+out/
+public/build/
+
+# Vite cache
+.vite/
+.vitepress/dist/
+
+# Caches
+.cache/
+.parcel-cache/
+
+# Environment variables
+.env
+.env.*.local
+.env.local
+
+# Logs
+npm-debug.log*
+nyc-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.eslintcache
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln
+*.csproj
+
+# Workspace files
+/*.code-workspace
+
+# Keep tiny project file as ignored placeholder
+test.cpp
