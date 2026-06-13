@@ -1,0 +1,16 @@
+export const gsapTargets = {
+  appShell: '[data-gsap-target="app-shell"]',
+  topNav: '[data-gsap-target="top-nav"]',
+  navItem: '[data-gsap-target="nav-item"]',
+  pageRoot: '[data-gsap-target="page-root"]',
+  pageTitle: '[data-gsap-target="page-title"]',
+  riskCard: '[data-gsap-target="risk-card"]',
+  metricCard: '[data-gsap-target="metric-card"]',
+  evidenceRow: '[data-gsap-target="evidence-row"]',
+  auditEvent: '[data-gsap-target="audit-event"]',
+  taskCard: '[data-gsap-target="task-card"]',
+  splashRoot: '[data-gsap-target="splash-root"]',
+  splashRing: '[data-gsap-target="splash-ring"]',
+  splashNode: '[data-gsap-target="splash-node"]',
+  splashCore: '[data-gsap-target="splash-core"]',
+};

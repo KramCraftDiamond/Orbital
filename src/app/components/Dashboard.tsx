@@ -1,4 +1,11 @@
+import { useRef } from "react";
+import { useDashboardIntro } from "../../animations/useDashboardIntro";
+
 export function Dashboard() {
+  const rootRef = useRef<HTMLElement>(null);
+
+  useDashboardIntro(rootRef);
+
   const metrics = [
     { label: "Health Score", value: "87%" },
     { label: "Active MAPs", value: "23" },
@@ -35,15 +42,30 @@ export function Dashboard() {
   ];
 
   return (
-    <div className="p-8">
-      <div className="mb-8 flex justify-between items-center border-b-2 border-black pb-4">
-        <h1 className="text-3xl font-bold">DASHBOARD</h1>
-        <div className="border-2 border-black px-4 py-2">2026-05-22</div>
+    <section ref={rootRef} data-gsap-target="page-root" className="p-8">
+      <div
+        data-gsap-target="page-header"
+        className="mb-8 flex justify-between items-center border-b-2 border-black pb-4"
+      >
+        <h1 data-gsap-target="page-title" className="text-3xl font-bold">
+          DASHBOARD
+        </h1>
+
+        <div data-gsap-target="date-chip" className="border-2 border-black px-4 py-2">
+          2026-05-22
+        </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div
+        data-gsap-target="dashboard-grid"
+        className="grid grid-cols-4 gap-4 mb-8"
+      >
         {metrics.map((metric, idx) => (
-          <div key={idx} className="border-2 border-black p-6">
+          <div
+            key={idx}
+            data-gsap-target="metric-card"
+            className="border-2 border-black p-6"
+          >
             <div className="text-sm mb-2">{metric.label}</div>
             <div className="text-3xl font-bold">{metric.value}</div>
           </div>
@@ -51,21 +73,24 @@ export function Dashboard() {
       </div>
 
       <div className="grid grid-cols-2 gap-6 mb-8">
-        <div className="border-2 border-black p-6">
+        <div data-gsap-target="dashboard-panel" className="border-2 border-black p-6">
           <h2 className="text-xl font-bold mb-4 border-b-2 border-black pb-2">
             RECENT REGULATIONS
           </h2>
+
           <div className="space-y-3">
             {regulations.map((reg, idx) => (
-              <div key={idx} className="border-2 border-black p-3">
+              <div key={idx} data-gsap-target="evidence-row" className="border-2 border-black p-3">
                 <div className="flex items-start gap-3">
                   <div className="border-2 border-black px-2 py-1 text-xs">
                     {reg.source}
                   </div>
+
                   <div className="flex-1">
                     <div className="font-bold">{reg.name}</div>
                     <div className="text-sm mt-1">{reg.date}</div>
                   </div>
+
                   <div className="border-2 border-black px-2 py-1 text-xs">
                     {reg.status}
                   </div>
@@ -75,18 +100,22 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="border-2 border-black p-6">
+        <div data-gsap-target="dashboard-panel" className="border-2 border-black p-6">
           <h2 className="text-xl font-bold mb-4 border-b-2 border-black pb-2">
             DEPARTMENT PROGRESS
           </h2>
+
           <div className="flex items-end justify-around h-64 border-b-2 border-black">
             {departments.map((dept, idx) => (
-              <div key={idx} className="flex flex-col items-center gap-2">
+              <div key={idx} data-gsap-target="bar-item" className="flex flex-col items-center gap-2">
                 <div className="text-sm font-bold">{dept.progress}%</div>
+
                 <div
+                  data-gsap-target="progress-bar"
                   className="w-16 bg-black"
                   style={{ height: `${dept.progress}%` }}
-                ></div>
+                />
+
                 <div className="text-sm mt-2">{dept.name}</div>
               </div>
             ))}
@@ -95,13 +124,18 @@ export function Dashboard() {
       </div>
 
       <div className="grid grid-cols-3 gap-6">
-        <div className="border-2 border-black p-6">
+        <div data-gsap-target="dashboard-panel" className="border-2 border-black p-6">
           <h2 className="text-xl font-bold mb-4 border-b-2 border-black pb-2">
             FINE EXPOSURE BY DOMAIN
           </h2>
+
           <div className="space-y-2">
             {fineExposure.map((item, idx) => (
-              <div key={idx} className="flex justify-between border-b border-black pb-2">
+              <div
+                key={idx}
+                data-gsap-target="exposure-row"
+                className="flex justify-between border-b border-black pb-2"
+              >
                 <div className="text-sm">{item.domain}</div>
                 <div className="font-bold">{item.amount}</div>
               </div>
@@ -109,13 +143,14 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="border-2 border-black p-6">
+        <div data-gsap-target="dashboard-panel" className="border-2 border-black p-6">
           <h2 className="text-xl font-bold mb-4 border-b-2 border-black pb-2">
             OVERDUE ALERTS
           </h2>
+
           <div className="space-y-3">
             {overdueAlerts.map((alert, idx) => (
-              <div key={idx} className="border-2 border-black p-2">
+              <div key={idx} data-gsap-target="risk-card" className="border-2 border-black p-2">
                 <div className="text-sm font-bold">{alert.task}</div>
                 <div className="text-xs mt-1">{alert.days}</div>
               </div>
@@ -123,18 +158,22 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="border-2 border-black p-6">
+        <div data-gsap-target="dashboard-panel" className="border-2 border-black p-6">
           <h2 className="text-xl font-bold mb-4 border-b-2 border-black pb-2">
             OVERALL HEALTH SCORE
           </h2>
+
           <div className="flex items-center justify-center h-32">
-            <div className="text-6xl font-bold">87%</div>
+            <div data-gsap-target="health-score" className="text-6xl font-bold">
+              87%
+            </div>
           </div>
+
           <div className="text-center text-sm mt-4 border-t-2 border-black pt-4">
             Based on 23 active compliance metrics
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
