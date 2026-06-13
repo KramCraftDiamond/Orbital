@@ -13,4 +13,8 @@ export const gsapTargets = {
   splashRing: '[data-gsap-target="splash-ring"]',
   splashNode: '[data-gsap-target="splash-node"]',
   splashCore: '[data-gsap-target="splash-core"]',
-};
+  splashTitle: '[data-gsap-target="splash-title"]',
+  splashStatus: '[data-gsap-target="splash-status"]',
+  shutterMask: '[data-gsap-target="shutter-mask"]',
+  heroOrbitalLogo: '[data-gsap-target="hero-orbital-logo"]',
+};

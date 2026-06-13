@@ -12,7 +12,10 @@ export function Layout() {
   ];
 
   return (
-    <div className="flex h-screen bg-white">
+    <div
+      data-gsap-target="app-shell"
+      className="flex h-screen bg-white"
+    >
       <aside className="w-64 border-r-2 border-black p-6">
         <div className="mb-12 border-2 border-black p-4">
           <div className="text-2xl font-bold mb-2">ORBITAL</div>
