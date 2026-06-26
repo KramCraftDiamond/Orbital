@@ -27,15 +27,15 @@ const navItems = [
 
 export function Sidebar() {
   return (
-    <aside className="hidden w-72 shrink-0 border-r border-border-default bg-[#080503]/95 lg:flex lg:flex-col">
-      <div className="border-b border-border-default px-5 py-5">
+    <aside className="hidden w-72 shrink-0 border-r border-[#E1DCC9]/12 bg-[#1F150C] text-[#E1DCC9] shadow-[18px_0_50px_rgba(65,45,21,0.14)] lg:flex lg:flex-col">
+      <div className="border-b border-[#E1DCC9]/12 px-5 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-accent-cyan/30 bg-accent-cyan/10 text-accent-cyan">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#E1DCC9]/24 bg-[#E1DCC9]/10 text-[#E1DCC9]">
             <Binary className="h-5 w-5" />
           </div>
           <div>
-            <p className="font-display text-sm font-bold uppercase text-text-primary">ORBITAL</p>
-            <p className="mt-0.5 text-[10px] uppercase text-text-muted">Banking Risk Intelligence</p>
+            <p className="font-display text-sm font-bold uppercase text-[#E1DCC9]">ORBITAL</p>
+            <p className="mt-0.5 text-[10px] uppercase text-[#E1DCC9]/52">Banking Risk Intelligence</p>
           </div>
         </div>
       </div>
@@ -52,17 +52,17 @@ export function Sidebar() {
                 cn(
                   "group flex items-center gap-3 rounded-md border border-transparent px-3 py-2.5 transition-colors",
                   isActive
-                    ? "border-accent-cyan/25 bg-accent-cyan/10 text-text-primary"
-                    : "text-text-secondary hover:border-border-default hover:bg-surface-base",
+                    ? "border-[#E1DCC9]/24 bg-[#E1DCC9]/12 text-[#E1DCC9]"
+                    : "text-[#E1DCC9]/68 hover:border-[#E1DCC9]/12 hover:bg-[#E1DCC9]/7",
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-accent-cyan" : "text-text-muted")} />
+                  <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-[#E1DCC9]" : "text-[#E1DCC9]/42")} />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium">{item.label}</span>
-                    <span className="block truncate text-[10px] text-text-muted">{item.sublabel}</span>
+                    <span className="block truncate text-[10px] text-[#E1DCC9]/42">{item.sublabel}</span>
                   </span>
                 </>
               )}
@@ -71,13 +71,13 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-border-default p-5">
-        <div className="rounded-lg border border-border-default bg-surface-base p-4">
+      <div className="border-t border-[#E1DCC9]/12 p-5">
+        <div className="rounded-lg border border-[#E1DCC9]/12 bg-[#000000]/18 p-4">
           <div className="mb-3 flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-accent-success" />
-            <span className="text-xs font-semibold text-text-primary">Private model online</span>
+            <span className="text-xs font-semibold text-[#E1DCC9]">Private model online</span>
           </div>
-          <p className="text-xs leading-5 text-text-muted">
+          <p className="text-xs leading-5 text-[#E1DCC9]/52">
             QLoRA extraction pipeline, JSON validator, and policy comparator running in on-prem mode.
           </p>
         </div>

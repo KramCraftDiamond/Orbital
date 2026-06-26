@@ -11,7 +11,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-lg border border-border-default bg-surface-base p-5 shadow-[0_22px_70px_rgba(0,0,0,0.28)] backdrop-blur",
+        "rounded-lg border border-border-default bg-surface-base p-5 shadow-[0_18px_48px_rgba(65,45,21,0.10)] backdrop-blur",
         className,
       )}
     >

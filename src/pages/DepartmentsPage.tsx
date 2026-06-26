@@ -6,11 +6,12 @@ import { Panel, PanelHeader } from "../components/ui/panel";
 import { departmentPerformance } from "../data/mockData";
 
 const chartColors = {
-  parchment: "#E1DCC9",
-  critical: "#A25236",
-  muted: "#8A7F6C",
-  tooltip: "#1F150C",
-  tooltipBorder: "rgba(225,220,201,0.22)",
+  primary: "#412D15",
+  critical: "#8F3B25",
+  muted: "rgba(65,45,21,0.62)",
+  tooltip: "#F8F3E2",
+  tooltipText: "#1F150C",
+  tooltipBorder: "rgba(65,45,21,0.18)",
 };
 
 export function DepartmentsPage() {
@@ -36,11 +37,11 @@ export function DepartmentsPage() {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={departmentPerformance} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid stroke="rgba(225,220,201,0.12)" vertical={false} />
+              <CartesianGrid stroke="rgba(65,45,21,0.10)" vertical={false} />
               <XAxis dataKey="department" tick={{ fill: chartColors.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: chartColors.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ background: chartColors.tooltip, border: `1px solid ${chartColors.tooltipBorder}`, borderRadius: 8, color: chartColors.parchment }} />
-              <Bar dataKey="closureRate" fill={chartColors.parchment} radius={[4, 4, 0, 0]} />
+              <Tooltip contentStyle={{ background: chartColors.tooltip, border: `1px solid ${chartColors.tooltipBorder}`, borderRadius: 8, color: chartColors.tooltipText }} />
+              <Bar dataKey="closureRate" fill={chartColors.primary} radius={[4, 4, 0, 0]} />
               <Bar dataKey="evidenceRejectionRate" fill={chartColors.critical} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

@@ -13,13 +13,13 @@ import type {
 export const regulators: Regulator[] = ["RBI", "NPCI", "SEBI", "CERT-In", "IRDAI", "FIU-IND"];
 
 export const regulatorColors: Record<Regulator, string> = {
-  RBI: "#E1DCC9",
-  NPCI: "#C8B97A",
-  SEBI: "#9C7743",
-  "CERT-In": "#B98236",
-  IRDAI: "#7A5630",
-  "FIU-IND": "#A25236",
-  IBA: "#8A7F6C",
+  RBI: "#412D15",
+  NPCI: "#596B35",
+  SEBI: "#8C6A3B",
+  "CERT-In": "#A16822",
+  IRDAI: "#6E4E28",
+  "FIU-IND": "#8F3B25",
+  IBA: "#7A6A50",
 };
 
 export const severityRank: Record<Severity, number> = {

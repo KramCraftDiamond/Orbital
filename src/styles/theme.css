@@ -4,55 +4,55 @@
   --font-size: 16px;
   
   /* Backgrounds */
-  --background: #000000;
-  --bg-secondary: #0B0704;
+  --background: #E1DCC9;
+  --bg-secondary: #D6CEB8;
   --bg-navy-layer: #1F150C;
 
   /* Surfaces */
-  --surface-base: rgba(31, 21, 12, 0.72);
-  --surface-elevated: rgba(65, 45, 21, 0.62);
-  --surface-strong: rgba(10, 7, 4, 0.94);
+  --surface-base: rgba(250, 246, 229, 0.88);
+  --surface-elevated: rgba(255, 251, 237, 0.78);
+  --surface-strong: rgba(239, 232, 211, 0.92);
 
   /* Borders */
-  --border-default: rgba(225, 220, 201, 0.14);
-  --border-strong: rgba(225, 220, 201, 0.24);
-  --border-active: rgba(225, 220, 201, 0.42);
+  --border-default: rgba(65, 45, 21, 0.16);
+  --border-strong: rgba(65, 45, 21, 0.28);
+  --border-active: rgba(65, 45, 21, 0.44);
 
   /* Text */
-  --text-primary: #E1DCC9;
-  --text-secondary: #B8AD95;
-  --text-muted: #7E725F;
+  --text-primary: #1F150C;
+  --text-secondary: #412D15;
+  --text-muted: rgba(65, 45, 21, 0.62);
 
   /* Accents */
-  --accent-cyan: #E1DCC9;
-  --accent-alert-cyan: #D1B680;
-  --accent-violet: #9C7743;
-  --accent-warning: #B98236;
-  --accent-critical: #A25236;
-  --accent-success: #C8B97A;
+  --accent-cyan: #412D15;
+  --accent-alert-cyan: #7B5A2E;
+  --accent-violet: #8C6A3B;
+  --accent-warning: #A16822;
+  --accent-critical: #8F3B25;
+  --accent-success: #596B35;
 
   /* Standard theme mapping variables */
-  --foreground: #E1DCC9;
-  --card: rgba(31, 21, 12, 0.72);
-  --card-foreground: #E1DCC9;
-  --popover: #1F150C;
-  --popover-foreground: #E1DCC9;
-  --primary: #E1DCC9;
-  --primary-foreground: #000000;
-  --secondary: #0B0704;
-  --secondary-foreground: #E1DCC9;
-  --muted: rgba(31, 21, 12, 0.72);
-  --muted-foreground: #B8AD95;
-  --accent: rgba(65, 45, 21, 0.62);
-  --accent-foreground: #E1DCC9;
-  --destructive: #A25236;
+  --foreground: #1F150C;
+  --card: rgba(250, 246, 229, 0.88);
+  --card-foreground: #1F150C;
+  --popover: #F8F3E2;
+  --popover-foreground: #1F150C;
+  --primary: #412D15;
+  --primary-foreground: #E1DCC9;
+  --secondary: #D6CEB8;
+  --secondary-foreground: #1F150C;
+  --muted: rgba(239, 232, 211, 0.92);
+  --muted-foreground: rgba(65, 45, 21, 0.62);
+  --accent: rgba(65, 45, 21, 0.10);
+  --accent-foreground: #1F150C;
+  --destructive: #8F3B25;
   --destructive-foreground: #ffffff;
-  --border: rgba(225, 220, 201, 0.14);
+  --border: rgba(65, 45, 21, 0.16);
   --input: transparent;
-  --input-background: rgba(10, 7, 4, 0.94);
+  --input-background: rgba(255, 251, 237, 0.74);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: rgba(225, 220, 201, 0.42);
+  --ring: rgba(65, 45, 21, 0.44);
   --radius: 0.75rem;
 
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -61,9 +61,8 @@
 }
 
 .dark {
-  /* Keep dark class variables identical so dark works in any environment */
-  --background: #000000;
-  --foreground: #E1DCC9;
+  --background: #E1DCC9;
+  --foreground: #1F150C;
 }
 
 @theme inline {

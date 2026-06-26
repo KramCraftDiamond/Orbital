@@ -2,7 +2,7 @@ import { Bell, Command, LockKeyhole, Search, ShieldCheck } from "lucide-react";
 
 export function TopBar() {
   return (
-    <header className="sticky top-0 z-20 border-b border-border-default bg-background/86 px-5 py-3 backdrop-blur-xl">
+    <header className="sticky top-0 z-20 border-b border-border-default bg-[#F8F3E2]/84 px-5 py-3 backdrop-blur-xl">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <p className="text-[10px] font-semibold uppercase text-text-muted">Suraksha Hackathon prototype</p>
@@ -15,7 +15,7 @@ export function TopBar() {
           <label className="relative hidden min-w-80 xl:block">
             <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
             <input
-              className="h-10 w-full rounded-md border border-border-default bg-surface-strong pl-10 pr-3 text-sm text-text-primary placeholder:text-text-muted"
+              className="h-10 w-full rounded-md border border-border-default bg-white/28 pl-10 pr-3 text-sm text-text-primary placeholder:text-text-muted"
               placeholder="Search circular, MAP card, obligation, audit event"
             />
           </label>
