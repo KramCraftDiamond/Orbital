@@ -15,15 +15,15 @@ const navItems = [
 
 export function Sidebar() {
   return (
-    <aside className="hidden w-72 shrink-0 border-r border-border-strong bg-[#F8F3E2]/92 text-text-primary shadow-[18px_0_50px_rgba(65,45,21,0.10)] backdrop-blur-xl lg:flex lg:flex-col">
-      <div className="border-b border-border-default px-5 py-6">
+    <aside className="relative z-10 hidden h-screen w-72 shrink-0 border-r border-border-strong bg-[#F8F3E2]/92 text-text-primary shadow-[18px_0_50px_rgba(65,45,21,0.10)] backdrop-blur-xl lg:flex lg:flex-col">
+      <div className="shrink-0 border-b border-border-default px-5 py-6">
         <div className="text-center">
           <p className="font-display text-base font-bold uppercase tracking-[0.12em] text-text-primary">ORBITAL</p>
           <p className="mt-2 text-[10px] uppercase tracking-[0.12em] text-text-muted">Banking Risk Intelligence</p>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-5">
+      <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-5">
         {navItems.map((item) => {
           return (
             <NavLink
@@ -52,7 +52,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="border-t border-border-default p-5">
+      <div className="shrink-0 border-t border-border-default p-5">
         <div className="rounded-lg border border-border-default bg-surface-elevated p-4 text-center">
           <div className="mb-3 flex items-center justify-center gap-2">
             <span className="h-2 w-2 rounded-full bg-accent-success" />
