@@ -12,7 +12,7 @@ interface UseSplashSequenceProps {
  *
  * Story: Acquire → Orbit → Converge → Core Expands → App Revealed
  *
- * The shutter mask is a dark circle (#050B14) centered on the SVG core.
+ * The shutter mask is a dark circle (#000000) centered on the SVG core.
  * It expands from the core outward — conveying the intelligence engine
  * opening into the operational dashboard. It is NOT the white nodes.
  *
@@ -163,7 +163,7 @@ export function useSplashSequence({
       }, 1.4);
 
       // Phase 5 — Core Expansion (1.7 → 2.15s)
-      // Dark shutter mask (same color as splash bg #050B14) expands
+      // Dark shutter mask (same color as splash bg #000000) expands
       // from the exact center of the SVG core, covering the screen.
       // This is the intelligence engine "opening" — not the white nodes.
       tl.to(

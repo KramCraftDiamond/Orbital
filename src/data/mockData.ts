@@ -1,0 +1,537 @@
+import type {
+  AuditEvent,
+  Circular,
+  DepartmentPerformance,
+  Evidence,
+  MAPCard,
+  Obligation,
+  ProcessingStep,
+  Regulator,
+  Severity,
+} from "../types/orbital";
+
+export const regulators: Regulator[] = ["RBI", "NPCI", "SEBI", "CERT-In", "IRDAI", "FIU-IND"];
+
+export const regulatorColors: Record<Regulator, string> = {
+  RBI: "#412D15",
+  NPCI: "#596B35",
+  SEBI: "#8C6A3B",
+  "CERT-In": "#A16822",
+  IRDAI: "#6E4E28",
+  "FIU-IND": "#8F3B25",
+  IBA: "#7A6A50",
+};
+
+export const severityRank: Record<Severity, number> = {
+  low: 1,
+  medium: 2,
+  high: 3,
+  critical: 4,
+};
+
+export const circulars: Circular[] = [
+  {
+    id: "CIR-2026-044",
+    regulator: "RBI",
+    title: "Cyber Resilience Controls for Digital Banking Channels",
+    circularNumber: "RBI/2026-27/044",
+    issueDate: "2026-05-22",
+    effectiveDate: "2026-08-20",
+    status: "processed",
+    totalClauses: 42,
+    totalObligations: 18,
+    highRiskCount: 6,
+    validationStatus: "valid",
+    sourceUrl: "https://rbi.org.in/Scripts/NotificationUser.aspx",
+  },
+  {
+    id: "CIR-2026-039",
+    regulator: "NPCI",
+    title: "UPI Operational Controls and Reconciliation Evidence",
+    circularNumber: "NPCI/UPI/OC-039",
+    issueDate: "2026-05-18",
+    effectiveDate: "2026-06-30",
+    status: "review",
+    totalClauses: 31,
+    totalObligations: 13,
+    highRiskCount: 4,
+    validationStatus: "warning",
+  },
+  {
+    id: "CIR-2026-033",
+    regulator: "CERT-In",
+    title: "Incident Reporting Timelines for Regulated Financial Entities",
+    circularNumber: "CERT-In/ADV/2026/033",
+    issueDate: "2026-05-15",
+    effectiveDate: "2026-05-25",
+    status: "processed",
+    totalClauses: 27,
+    totalObligations: 10,
+    highRiskCount: 5,
+    validationStatus: "valid",
+  },
+  {
+    id: "CIR-2026-026",
+    regulator: "SEBI",
+    title: "Quarterly Reporting Requirements for Intermediary Risk Controls",
+    circularNumber: "SEBI/HO/MIRSD/2026/026",
+    issueDate: "2026-05-10",
+    effectiveDate: "2026-07-01",
+    status: "processing",
+    totalClauses: 18,
+    totalObligations: 7,
+    highRiskCount: 1,
+    validationStatus: "review",
+  },
+  {
+    id: "CIR-2026-019",
+    regulator: "IRDAI",
+    title: "Data Governance and Policy Retention for Customer Records",
+    circularNumber: "IRDAI/DATA/GOV/019",
+    issueDate: "2026-05-04",
+    effectiveDate: "2026-09-01",
+    status: "processed",
+    totalClauses: 24,
+    totalObligations: 9,
+    highRiskCount: 2,
+    validationStatus: "valid",
+  },
+];
+
+export const obligations: Obligation[] = [
+  {
+    id: "OBL-2026-101",
+    circularId: "CIR-2026-044",
+    sourceClause: "Section 4.2",
+    sourceText:
+      "Banks shall implement enhanced authentication controls for high-risk digital banking transactions within ninety days of this circular.",
+    actor: "Scheduled commercial banks",
+    actionRequired: "Implement enhanced authentication controls for high-risk transactions.",
+    obligationType: "mandatory",
+    deadline: "2026-08-20",
+    domain: "Cybersecurity",
+    departments: ["IT", "Cybersecurity", "Digital Banking", "Compliance"],
+    severity: "critical",
+    severityReason: "Mandatory cyber control with customer transaction impact and short implementation window.",
+    evidenceRequired: [
+      "Updated authentication policy",
+      "System configuration screenshots",
+      "Test execution report",
+      "Compliance sign-off record",
+    ],
+    confidence: 0.96,
+    policyImpact: "Requires updates to digital channel authentication SOP and fraud-monitoring controls.",
+    validationStatus: "valid",
+  },
+  {
+    id: "OBL-2026-102",
+    circularId: "CIR-2026-039",
+    sourceClause: "Clause 3.1",
+    sourceText:
+      "Member banks must retain daily UPI reconciliation reports and exception handling logs for supervisory review.",
+    actor: "NPCI member banks",
+    actionRequired: "Retain UPI reconciliation reports and exception logs for supervisory review.",
+    obligationType: "reporting",
+    deadline: "2026-06-30",
+    domain: "Payments",
+    departments: ["Operations", "Digital Banking", "Internal Audit"],
+    severity: "high",
+    severityReason: "Evidence retention requirement affects operational audit readiness.",
+    evidenceRequired: [
+      "Daily reconciliation report sample",
+      "Exception log export",
+      "Retention SOP update",
+    ],
+    confidence: 0.91,
+    policyImpact: "Payment operations evidence retention matrix needs an additional UPI evidence class.",
+    validationStatus: "warning",
+  },
+  {
+    id: "OBL-2026-103",
+    circularId: "CIR-2026-033",
+    sourceClause: "Paragraph 5",
+    sourceText:
+      "Report qualifying cybersecurity incidents to CERT-In within six hours of notice, with preliminary impact assessment.",
+    actor: "Regulated financial entities",
+    actionRequired: "Report qualifying cybersecurity incidents within six hours with impact assessment.",
+    obligationType: "mandatory",
+    deadline: "Immediate and recurring",
+    domain: "Incident Response",
+    departments: ["Cybersecurity", "IT", "Risk", "Compliance"],
+    severity: "critical",
+    severityReason: "Six-hour reporting timeline creates severe regulatory and operational exposure.",
+    evidenceRequired: [
+      "Incident reporting workflow",
+      "SOC escalation logs",
+      "CERT-In reporting template",
+      "Training acknowledgement",
+    ],
+    confidence: 0.94,
+    policyImpact: "Incident response playbook must be updated to include CERT-In six-hour trigger.",
+    validationStatus: "valid",
+  },
+  {
+    id: "OBL-2026-104",
+    circularId: "CIR-2026-019",
+    sourceClause: "Section 7.4",
+    sourceText:
+      "Customer data archival policies shall include retention, deletion, review, and approval controls for all digital records.",
+    actor: "Insurers and regulated financial institutions",
+    actionRequired: "Update data archival policy with retention, deletion, review, and approval controls.",
+    obligationType: "mandatory",
+    deadline: "2026-09-01",
+    domain: "Data Privacy",
+    departments: ["Legal", "Operations", "IT", "Compliance"],
+    severity: "high",
+    severityReason: "Policy gap can weaken data governance and audit traceability.",
+    evidenceRequired: [
+      "Updated archival policy",
+      "Approval minutes",
+      "Data retention control evidence",
+    ],
+    confidence: 0.88,
+    policyImpact: "Customer record lifecycle policy requires an expanded retention and deletion section.",
+    validationStatus: "review",
+  },
+];
+
+export const mapCards: MAPCard[] = [
+  {
+    id: "MAP-2026-087",
+    obligationId: "OBL-2026-101",
+    title: "Implement enhanced authentication controls",
+    summary:
+      "Deploy additional authentication controls for high-risk digital transactions and produce evidence for compliance review.",
+    sourceRegulator: "RBI",
+    circularTitle: circulars[0].title,
+    sourceClause: "Section 4.2",
+    assignedDepartments: ["IT", "Cybersecurity", "Digital Banking"],
+    owner: "Aarav Menon",
+    severity: "critical",
+    deadline: "2026-08-20",
+    status: "AI Validation Pending",
+    evidenceRequired: obligations[0].evidenceRequired,
+    aiReasoning:
+      "The source clause uses mandatory language, applies to customer-facing transaction channels, and has a defined 90-day implementation window.",
+    validationChecklist: [
+      "Authentication policy updated",
+      "Control implemented in production",
+      "High-risk transaction test report attached",
+      "Compliance officer sign-off completed",
+    ],
+  },
+  {
+    id: "MAP-2026-084",
+    obligationId: "OBL-2026-102",
+    title: "Retain UPI reconciliation evidence",
+    summary:
+      "Update payment operations evidence retention and produce daily reconciliation artifacts for NPCI supervisory review.",
+    sourceRegulator: "NPCI",
+    circularTitle: circulars[1].title,
+    sourceClause: "Clause 3.1",
+    assignedDepartments: ["Operations", "Digital Banking"],
+    owner: "Nisha Rao",
+    severity: "high",
+    deadline: "2026-06-30",
+    status: "Evidence Submitted",
+    evidenceRequired: obligations[1].evidenceRequired,
+    aiReasoning:
+      "The circular creates a reporting and evidence retention obligation for member banks and maps primarily to payment operations.",
+    validationChecklist: [
+      "Report sample attached",
+      "Exception log export attached",
+      "Retention SOP approved",
+    ],
+  },
+  {
+    id: "MAP-2026-079",
+    obligationId: "OBL-2026-103",
+    title: "Update CERT-In incident reporting playbook",
+    summary:
+      "Revise SOC escalation workflow to support six-hour incident reporting and preliminary impact assessment.",
+    sourceRegulator: "CERT-In",
+    circularTitle: circulars[2].title,
+    sourceClause: "Paragraph 5",
+    assignedDepartments: ["Cybersecurity", "Risk", "Compliance"],
+    owner: "Kabir Sethi",
+    severity: "critical",
+    deadline: "2026-05-25",
+    status: "Overdue",
+    evidenceRequired: obligations[2].evidenceRequired,
+    aiReasoning:
+      "The six-hour reporting condition is immediate, recurring, and operationally critical for regulated entities.",
+    validationChecklist: [
+      "Incident workflow updated",
+      "SOC reporting template attached",
+      "Training acknowledgement recorded",
+      "Human reviewer confirms readiness",
+    ],
+  },
+];
+
+export const evidence: Evidence[] = [
+  {
+    id: "EVD-2026-188",
+    mapCardId: "MAP-2026-087",
+    fileName: "authentication_policy_update.pdf",
+    uploadedBy: "Aarav Menon",
+    uploadedAt: "2026-05-22 14:18",
+    validationResult: "Partial",
+    matchedRequirements: ["Updated authentication policy", "System configuration screenshots"],
+    missingRequirements: ["Test execution report", "Compliance sign-off record"],
+    recommendation: "Request testing evidence and compliance sign-off before closure.",
+    requiresHumanReview: true,
+  },
+  {
+    id: "EVD-2026-176",
+    mapCardId: "MAP-2026-084",
+    fileName: "upi_exception_log_export.csv",
+    uploadedBy: "Nisha Rao",
+    uploadedAt: "2026-05-21 11:44",
+    validationResult: "Pass",
+    matchedRequirements: [
+      "Daily reconciliation report sample",
+      "Exception log export",
+      "Retention SOP update",
+    ],
+    missingRequirements: [],
+    recommendation: "Evidence satisfies obligation. Human approval is still required for closure.",
+    requiresHumanReview: true,
+  },
+  {
+    id: "EVD-2026-171",
+    mapCardId: "MAP-2026-079",
+    fileName: "cert_in_reporting_playbook_draft.docx",
+    uploadedBy: "Kabir Sethi",
+    uploadedAt: "2026-05-20 17:02",
+    validationResult: "Human Review Required",
+    matchedRequirements: ["Incident reporting workflow", "CERT-In reporting template"],
+    missingRequirements: ["SOC escalation logs", "Training acknowledgement"],
+    recommendation: "Escalate to compliance reviewer because the deadline is overdue.",
+    requiresHumanReview: true,
+  },
+];
+
+export const auditEvents: AuditEvent[] = [
+  {
+    id: "AUD-2026-9101",
+    entityType: "Circular",
+    entityId: "CIR-2026-044",
+    action: "Circular uploaded",
+    actor: "Compliance Intake",
+    timestamp: "2026-05-22 09:03:12",
+    details: "RBI cyber resilience circular ingested from secure repository.",
+    eventHash: "0x7f8e9d2c1b4a3f5e6d8c9b2a1f3e5d7c9b4a2f6e8d1c3b5",
+    previousHash: "0x3e5f7a9d2c8b1f4e6d7c9a2b3f5e8d1c4a6b9f2e7d5c8a",
+  },
+  {
+    id: "AUD-2026-9102",
+    entityType: "System",
+    entityId: "PIPE-044",
+    action: "OCR and clause parsing completed",
+    actor: "ORBITAL Parser",
+    timestamp: "2026-05-22 09:05:44",
+    details: "42 clauses parsed, 3 tables extracted, metadata confidence 96 percent.",
+    eventHash: "0x9f2e4a6b7d1c5a3f8e2d6c9b4a1f7e5d3c8b2a6f4e9d1c",
+    previousHash: "0x7f8e9d2c1b4a3f5e6d8c9b2a1f3e5d7c9b4a2f6e8d1c3b5",
+  },
+  {
+    id: "AUD-2026-9103",
+    entityType: "Obligation",
+    entityId: "OBL-2026-101",
+    action: "Obligation JSON generated",
+    actor: "ORBITAL Extraction Model",
+    timestamp: "2026-05-22 09:07:21",
+    details: "Critical authentication control obligation extracted and schema validated.",
+    eventHash: "0x42a9d1c7b5a3f2e8d6c4a9b1f0x9f2e4a6b7d1c5a3f8e2",
+    previousHash: "0x9f2e4a6b7d1c5a3f8e2d6c9b4a1f7e5d3c8b2a6f4e9d1c",
+    severity: "critical",
+  },
+  {
+    id: "AUD-2026-9104",
+    entityType: "MAPCard",
+    entityId: "MAP-2026-087",
+    action: "MAP Card assigned",
+    actor: "Compliance Officer",
+    timestamp: "2026-05-22 09:12:08",
+    details: "Assigned to IT, Cybersecurity, and Digital Banking with human sign-off required.",
+    eventHash: "0x5d3c8b2a6f4e9d1c7b5a3f2e8d6c4a9b1f42a9d1c7b5a3f2",
+    previousHash: "0x42a9d1c7b5a3f2e8d6c4a9b1f0x9f2e4a6b7d1c5a3f8e2",
+    severity: "critical",
+  },
+  {
+    id: "AUD-2026-9105",
+    entityType: "Evidence",
+    entityId: "EVD-2026-188",
+    action: "Evidence validation completed",
+    actor: "ORBITAL Evidence Validator",
+    timestamp: "2026-05-22 14:21:36",
+    details: "Evidence partially satisfies the obligation. Two requirements remain missing.",
+    eventHash: "0x8e2d6c4a9b1f42a9d1c7b5a3f2e5d3c8b2a6f4e9d1c7b",
+    previousHash: "0x5d3c8b2a6f4e9d1c7b5a3f2e8d6c4a9b1f42a9d1c7b5a3f2",
+    severity: "high",
+  },
+];
+
+export const departmentPerformance: DepartmentPerformance[] = [
+  {
+    department: "Cybersecurity",
+    assigned: 64,
+    closed: 49,
+    overdue: 6,
+    pendingEvidence: 9,
+    averageClosureTime: "8.4 days",
+    highRiskExposure: "INR 1.8Cr",
+    evidenceRejectionRate: 9,
+    closureRate: 77,
+  },
+  {
+    department: "Operations",
+    assigned: 58,
+    closed: 42,
+    overdue: 8,
+    pendingEvidence: 12,
+    averageClosureTime: "10.2 days",
+    highRiskExposure: "INR 1.2Cr",
+    evidenceRejectionRate: 14,
+    closureRate: 72,
+  },
+  {
+    department: "Compliance",
+    assigned: 71,
+    closed: 62,
+    overdue: 3,
+    pendingEvidence: 5,
+    averageClosureTime: "6.1 days",
+    highRiskExposure: "INR 940L",
+    evidenceRejectionRate: 6,
+    closureRate: 87,
+  },
+  {
+    department: "Digital Banking",
+    assigned: 46,
+    closed: 34,
+    overdue: 5,
+    pendingEvidence: 7,
+    averageClosureTime: "9.6 days",
+    highRiskExposure: "INR 1.5Cr",
+    evidenceRejectionRate: 11,
+    closureRate: 74,
+  },
+  {
+    department: "Legal",
+    assigned: 35,
+    closed: 29,
+    overdue: 2,
+    pendingEvidence: 4,
+    averageClosureTime: "7.3 days",
+    highRiskExposure: "INR 620L",
+    evidenceRejectionRate: 8,
+    closureRate: 83,
+  },
+];
+
+export const processingSteps: ProcessingStep[] = [
+  {
+    label: "Upload",
+    description: "Secure document intake and checksum creation",
+    status: "completed",
+    duration: "00:04",
+  },
+  {
+    label: "OCR",
+    description: "Scanned-page detection and layout extraction",
+    status: "completed",
+    duration: "00:28",
+  },
+  {
+    label: "Clause Parsing",
+    description: "Sections, tables, annexures, and deadlines identified",
+    status: "completed",
+    duration: "00:41",
+  },
+  {
+    label: "Metadata Extraction",
+    description: "Regulator, circular number, issue date, effective date",
+    status: "completed",
+    duration: "00:11",
+  },
+  {
+    label: "Obligation Extraction",
+    description: "LLM extracts structured compliance obligations",
+    status: "running",
+  },
+  {
+    label: "JSON Validation",
+    description: "Schema validation and repair workflow",
+    status: "pending",
+  },
+  {
+    label: "MAP Card Generation",
+    description: "Department task cards created with audit links",
+    status: "pending",
+  },
+];
+
+export const throughputTrend = [
+  { day: "Mon", extracted: 72, validated: 65, closed: 46, highRisk: 12 },
+  { day: "Tue", extracted: 88, validated: 81, closed: 58, highRisk: 17 },
+  { day: "Wed", extracted: 104, validated: 97, closed: 69, highRisk: 21 },
+  { day: "Thu", extracted: 96, validated: 92, closed: 74, highRisk: 18 },
+  { day: "Fri", extracted: 132, validated: 124, closed: 93, highRisk: 25 },
+  { day: "Sat", extracted: 78, validated: 73, closed: 62, highRisk: 13 },
+  { day: "Sun", extracted: 116, validated: 108, closed: 84, highRisk: 19 },
+];
+
+export const regulatorDistribution = regulators.map((regulator) => ({
+  regulator,
+  value:
+    regulator === "RBI"
+      ? 42
+      : regulator === "NPCI"
+        ? 18
+        : regulator === "SEBI"
+          ? 15
+          : regulator === "CERT-In"
+            ? 12
+            : regulator === "IRDAI"
+              ? 8
+              : 5,
+  color: regulatorColors[regulator],
+}));
+
+export const obligationJsonPreview = {
+  document_metadata: {
+    regulator: "RBI",
+    document_title: circulars[0].title,
+    issue_date: "2026-05-22",
+    effective_date: "2026-08-20",
+    circular_number: "RBI/2026-27/044",
+    source_url: circulars[0].sourceUrl,
+  },
+  obligations: obligations.slice(0, 2).map((obligation) => ({
+    obligation_id: obligation.id,
+    source_clause: obligation.sourceClause,
+    source_text: obligation.sourceText,
+    actor: obligation.actor,
+    action_required: obligation.actionRequired,
+    obligation_type: obligation.obligationType,
+    deadline: {
+      deadline_text: obligation.deadline,
+      absolute_date: obligation.deadline.includes("2026") ? obligation.deadline : null,
+      urgency: obligation.severity === "critical" ? "short_term" : "medium_term",
+    },
+    domain: obligation.domain,
+    responsible_departments: obligation.departments,
+    severity: obligation.severity,
+    evidence_required: obligation.evidenceRequired,
+    policy_impact: obligation.policyImpact,
+    confidence: obligation.confidence,
+  })),
+  non_obligation_notes: [
+    {
+      source_section: "Introduction",
+      note: "Background context was informational and did not create a direct compliance action.",
+    },
+  ],
+};
