@@ -52,17 +52,6 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="shrink-0 border-t border-border-default p-5">
-        <div className="rounded-lg border border-border-default bg-surface-elevated p-4 text-center">
-          <div className="mb-3 flex items-center justify-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-accent-success" />
-            <span className="text-xs font-semibold text-text-primary">Private model online</span>
-          </div>
-          <p className="text-xs leading-5 text-text-muted">
-            QLoRA extraction pipeline, JSON validator, and policy comparator running in on-prem mode.
-          </p>
-        </div>
-      </div>
     </aside>
   );
 }
