@@ -144,9 +144,6 @@ export function WarmGlobeSatellites({
         }}
       />
       <div className="pointer-events-none absolute inset-0 rounded-full border border-[#E1DCC9]/10" />
-      <div className="pointer-events-none absolute left-4 top-6 rounded-full border border-[#E1DCC9]/15 bg-black/20 px-3 py-1 text-[10px] font-semibold uppercase text-[#E1DCC9]/70 backdrop-blur">
-        Regulatory orbit
-      </div>
     </div>
   );
 }
