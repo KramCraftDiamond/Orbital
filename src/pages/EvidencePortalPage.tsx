@@ -1,4 +1,3 @@
-import { FileText, FileUp, ShieldCheck, XCircle } from "lucide-react";
 import { EvidenceChecklist } from "../components/evidence/EvidenceChecklist";
 import { EvidenceValidationPanel } from "../components/evidence/EvidenceValidationPanel";
 import { DepartmentChip, RiskBadge, StatusPill } from "../components/ui/badges";
@@ -10,7 +9,7 @@ export function EvidencePortalPage() {
   const selectedEvidence = evidence[0];
 
   return (
-    <div className="space-y-6 p-5 xl:p-8">
+    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
       <div>
         <p className="text-xs font-semibold uppercase text-accent-cyan">Evidence Portal</p>
         <h2 className="mt-2 text-3xl font-semibold text-text-primary">Validate proof against regulatory obligations</h2>
@@ -36,12 +35,11 @@ export function EvidencePortalPage() {
           </div>
 
           <div className="mt-6 rounded-lg border border-dashed border-border-active bg-surface-strong p-6 text-center">
-            <FileUp className="mx-auto h-8 w-8 text-accent-cyan" />
-            <h3 className="mt-4 text-lg font-semibold text-text-primary">Upload supplementary evidence</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Upload supplementary evidence</h3>
             <p className="mt-2 text-sm text-text-secondary">
               Add reports, policy updates, screenshots, logs, or sign-off records for this MAP Card.
             </p>
-            <button className="mt-5 rounded-md bg-accent-cyan px-4 py-2 text-sm font-semibold text-background">
+            <button className="mt-5 inline-flex items-center justify-center rounded-md bg-accent-cyan px-5 py-2 text-center text-sm font-semibold text-background">
               Select files
             </button>
           </div>
@@ -61,10 +59,7 @@ export function EvidencePortalPage() {
             {evidence.map((item) => (
               <div key={item.id} className="rounded-md border border-border-default bg-surface-strong p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-accent-cyan" />
-                    <span className="text-sm font-semibold text-text-primary">{item.fileName}</span>
-                  </div>
+                  <span className="text-sm font-semibold text-text-primary">{item.fileName}</span>
                   <StatusPill status={item.validationResult} />
                 </div>
                 <p className="text-xs text-text-muted">
@@ -75,12 +70,10 @@ export function EvidencePortalPage() {
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-accent-success px-4 text-sm font-semibold text-background">
-              <ShieldCheck className="h-4 w-4" />
+            <button className="inline-flex h-11 items-center justify-center rounded-md bg-accent-success px-4 text-center text-sm font-semibold text-background">
               Approve closure
             </button>
-            <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-accent-critical/35 bg-accent-critical/10 px-4 text-sm font-semibold text-accent-critical">
-              <XCircle className="h-4 w-4" />
+            <button className="inline-flex h-11 items-center justify-center rounded-md border border-accent-critical/35 bg-accent-critical/10 px-4 text-center text-sm font-semibold text-accent-critical">
               Request revision
             </button>
           </div>

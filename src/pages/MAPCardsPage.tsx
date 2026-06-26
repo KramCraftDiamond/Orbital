@@ -1,11 +1,10 @@
-import { Filter, ShieldAlert } from "lucide-react";
 import { MAPCard } from "../components/map-cards/MAPCard";
 import { Panel, PanelHeader } from "../components/ui/panel";
 import { mapCards } from "../data/mockData";
 
 export function MAPCardsPage() {
   return (
-    <div className="space-y-6 p-5 xl:p-8">
+    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase text-accent-cyan">MAP Card Task Feed</p>
@@ -15,8 +14,7 @@ export function MAPCardsPage() {
             deadlines, evidence requirements, AI reasoning, validation checklists, and audit links.
           </p>
         </div>
-        <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border-default bg-surface-elevated px-4 text-sm text-text-primary">
-          <Filter className="h-4 w-4 text-accent-cyan" />
+        <button className="inline-flex h-11 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-5 text-center text-sm font-semibold text-text-primary">
           Filter by severity
         </button>
       </div>
@@ -51,8 +49,7 @@ export function MAPCardsPage() {
           <Panel>
             <PanelHeader title="Human Sign-off" eyebrow="Closure policy" />
             <div className="rounded-md border border-accent-cyan/25 bg-accent-cyan/10 p-4">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-accent-cyan">
-                <ShieldAlert className="h-4 w-4" />
+              <div className="mb-2 text-sm font-semibold text-accent-cyan">
                 AI cannot close tasks alone
               </div>
               <p className="text-sm leading-6 text-text-secondary">

@@ -1,4 +1,4 @@
-import { CheckCircle2, Copy, TriangleAlert } from "lucide-react";
+import { CheckCircle2, TriangleAlert } from "lucide-react";
 import { StatusPill } from "../ui/badges";
 
 export function JsonViewer({ value }: { value: unknown }) {
@@ -16,8 +16,7 @@ export function JsonViewer({ value }: { value: unknown }) {
         </div>
         <div className="flex items-center gap-2">
           <StatusPill status="valid" />
-          <button className="inline-flex items-center gap-2 rounded-md border border-border-default px-3 py-2 text-xs text-text-secondary">
-            <Copy className="h-3.5 w-3.5" />
+          <button className="inline-flex items-center justify-center rounded-md border border-border-default px-4 py-2 text-center text-xs font-semibold text-text-secondary">
             Copy JSON
           </button>
         </div>

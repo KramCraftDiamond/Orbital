@@ -1,4 +1,3 @@
-import { ClipboardList, Link2, UserCheck } from "lucide-react";
 import type { MAPCard as MAPCardType } from "../../types/orbital";
 import { DepartmentChip, RegulatorBadge, RiskBadge, StatusPill } from "../ui/badges";
 
@@ -18,9 +17,6 @@ export function MAPCard({ card }: { card: MAPCardType }) {
           <h3 className="text-xl font-semibold text-text-primary">{card.title}</h3>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">{card.summary}</p>
         </div>
-        <div className="rounded-md bg-accent-violet/10 p-2 text-accent-violet">
-          <ClipboardList className="h-5 w-5" />
-        </div>
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_0.9fr]">
@@ -31,10 +27,7 @@ export function MAPCard({ card }: { card: MAPCardType }) {
         </div>
         <div className="rounded-md border border-border-default bg-surface-strong p-4">
           <p className="text-xs font-semibold uppercase text-text-muted">Ownership</p>
-          <div className="mt-3 flex items-center gap-2 text-sm text-text-primary">
-            <UserCheck className="h-4 w-4 text-accent-cyan" />
-            {card.owner}
-          </div>
+          <p className="mt-3 text-sm font-semibold text-text-primary">{card.owner}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {card.assignedDepartments.map((department) => (
               <DepartmentChip key={department} department={department} />
@@ -73,15 +66,14 @@ export function MAPCard({ card }: { card: MAPCardType }) {
         <p className="mt-2 text-sm leading-6 text-text-secondary">{card.aiReasoning}</p>
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-3">
-        <button className="rounded-md bg-accent-cyan px-4 py-2 text-sm font-semibold text-background">
+      <div className="mt-5 flex flex-wrap justify-center gap-3">
+        <button className="inline-flex min-w-36 items-center justify-center rounded-md bg-accent-cyan px-4 py-2 text-center text-sm font-semibold text-background">
           Acknowledge task
         </button>
-        <button className="rounded-md border border-border-default bg-surface-elevated px-4 py-2 text-sm font-semibold text-text-primary">
+        <button className="inline-flex min-w-36 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 py-2 text-center text-sm font-semibold text-text-primary">
           Request evidence
         </button>
-        <button className="inline-flex items-center gap-2 rounded-md border border-border-default bg-surface-elevated px-4 py-2 text-sm font-semibold text-text-primary">
-          <Link2 className="h-4 w-4 text-accent-violet" />
+        <button className="inline-flex min-w-36 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 py-2 text-center text-sm font-semibold text-text-primary">
           Audit chain
         </button>
       </div>

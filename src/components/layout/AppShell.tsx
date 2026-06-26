@@ -11,7 +11,7 @@ export function AppShell() {
       <Sidebar />
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
         <TopBar />
-        <main className="min-h-0 flex-1 overflow-auto">
+        <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
           <Outlet />
         </main>
       </div>

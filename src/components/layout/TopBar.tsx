@@ -1,5 +1,3 @@
-import { Bell, Command, LockKeyhole, Search, ShieldCheck } from "lucide-react";
-
 export function TopBar() {
   return (
     <header className="sticky top-0 z-20 border-b border-border-default bg-[#F8F3E2]/84 px-5 py-3 backdrop-blur-xl">
@@ -13,25 +11,22 @@ export function TopBar() {
 
         <div className="flex flex-wrap items-center gap-3">
           <label className="relative hidden min-w-80 xl:block">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
             <input
-              className="h-10 w-full rounded-md border border-border-default bg-white/28 pl-10 pr-3 text-sm text-text-primary placeholder:text-text-muted"
+              className="h-10 w-full rounded-md border border-border-default bg-white/28 px-3 text-sm text-text-primary placeholder:text-text-muted"
               placeholder="Search circular, MAP card, obligation, audit event"
             />
           </label>
-          <span className="inline-flex h-10 items-center gap-2 rounded-md border border-accent-success/25 bg-accent-success/10 px-3 text-xs font-semibold text-accent-success">
-            <LockKeyhole className="h-3.5 w-3.5" />
+          <span className="inline-flex h-10 items-center justify-center rounded-md border border-accent-success/25 bg-accent-success/10 px-4 text-center text-xs font-semibold text-accent-success">
             On-prem mode
           </span>
-          <span className="inline-flex h-10 items-center gap-2 rounded-md border border-border-default bg-surface-elevated px-3 text-xs text-text-secondary">
-            <ShieldCheck className="h-3.5 w-3.5 text-accent-cyan" />
+          <span className="inline-flex h-10 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 text-center text-xs text-text-secondary">
             Audit chain locked
           </span>
-          <button className="flex h-10 w-10 items-center justify-center rounded-md border border-border-default bg-surface-elevated text-text-secondary">
-            <Command className="h-4 w-4" />
+          <button className="flex h-10 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 text-center text-xs font-semibold text-text-secondary">
+            Command
           </button>
-          <button className="flex h-10 w-10 items-center justify-center rounded-md border border-border-default bg-surface-elevated text-text-secondary">
-            <Bell className="h-4 w-4" />
+          <button className="flex h-10 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 text-center text-xs font-semibold text-text-secondary">
+            Alerts
           </button>
         </div>
       </div>

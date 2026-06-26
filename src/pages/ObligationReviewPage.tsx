@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, FileJson2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { ObligationCard } from "../components/obligations/ObligationCard";
 import { JsonViewer } from "../components/obligations/JsonViewer";
 import { Panel, PanelHeader } from "../components/ui/panel";
@@ -6,7 +6,7 @@ import { obligationJsonPreview, obligations } from "../data/mockData";
 
 export function ObligationReviewPage() {
   return (
-    <div className="space-y-6 p-5 xl:p-8">
+    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase text-accent-cyan">Obligation Review</p>
@@ -16,8 +16,7 @@ export function ObligationReviewPage() {
             evidence requirements, and the strict machine-readable JSON used by the workflow engine.
           </p>
         </div>
-        <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-accent-cyan px-4 text-sm font-semibold text-background">
-          <FileJson2 className="h-4 w-4" />
+        <button className="inline-flex h-11 items-center justify-center rounded-md bg-accent-cyan px-5 text-center text-sm font-semibold text-background">
           Export schema output
         </button>
       </div>

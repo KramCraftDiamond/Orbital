@@ -13,14 +13,6 @@ import {
   YAxis,
 } from "recharts";
 import {
-  AlertTriangle,
-  CheckCircle2,
-  ClipboardList,
-  FileJson2,
-  FileText,
-  ShieldCheck,
-} from "lucide-react";
-import {
   circulars,
   departmentPerformance,
   evidence,
@@ -52,10 +44,10 @@ export function CommandCenterPage() {
   const pendingEvidence = evidence.filter((item) => item.validationResult !== "Pass").length;
 
   return (
-    <div className="space-y-6 p-5 xl:p-8">
+    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
       <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <Panel className="overflow-hidden p-0">
-          <div className="grid min-h-80 gap-0 lg:grid-cols-[1fr_0.85fr]">
+          <div className="grid min-h-80 gap-0 2xl:grid-cols-[1fr_0.85fr]">
             <div className="p-6">
               <p className="mb-3 text-xs font-semibold uppercase text-accent-cyan">Command Center</p>
               <h2 className="text-3xl font-semibold leading-tight text-text-primary">
@@ -79,7 +71,7 @@ export function CommandCenterPage() {
                 ))}
               </div>
             </div>
-            <OrbitalIntelligenceGraph compact className="min-h-80 rounded-none border-0 border-l border-border-default" />
+            <OrbitalIntelligenceGraph compact className="min-h-80 rounded-none border-0 border-t border-border-default 2xl:border-l 2xl:border-t-0" />
           </div>
         </Panel>
 
@@ -105,10 +97,10 @@ export function CommandCenterPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Circulars Processed" value={String(circulars.length + 141)} change="+18 this week" icon={FileText} />
-        <MetricCard label="Obligations Extracted" value={String(totalObligations + 1247)} change="94% schema-valid" icon={FileJson2} tone="violet" />
-        <MetricCard label="High-Risk Open" value={String(highRisk + 20)} change={`${overdue + 7} due in 7 days`} icon={AlertTriangle} tone="warning" />
-        <MetricCard label="Closure Rate" value="87%" change={`${pendingEvidence + 18} evidence items pending`} icon={CheckCircle2} tone="success" />
+        <MetricCard label="Circulars Processed" value={String(circulars.length + 141)} change="+18 this week" />
+        <MetricCard label="Obligations Extracted" value={String(totalObligations + 1247)} change="94% schema-valid" tone="violet" />
+        <MetricCard label="High-Risk Open" value={String(highRisk + 20)} change={`${overdue + 7} due in 7 days`} tone="warning" />
+        <MetricCard label="Closure Rate" value="87%" change={`${pendingEvidence + 18} evidence items pending`} tone="success" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
@@ -201,8 +193,7 @@ export function CommandCenterPage() {
               </div>
             ))}
             <div className="rounded-md border border-accent-cyan/25 bg-accent-cyan/10 p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-accent-cyan">
-                <ClipboardList className="h-4 w-4" />
+              <div className="text-sm font-semibold text-accent-cyan">
                 Human sign-off remains mandatory
               </div>
               <p className="mt-2 text-xs leading-5 text-text-secondary">

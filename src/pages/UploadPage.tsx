@@ -9,7 +9,7 @@ export function UploadPage() {
   const circular = circulars[0];
 
   return (
-    <div className="space-y-6 p-5 xl:p-8">
+    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
       <div>
         <p className="text-xs font-semibold uppercase text-accent-cyan">Circular Intake</p>
         <h2 className="mt-2 text-3xl font-semibold text-text-primary">Upload and process regulatory circulars</h2>

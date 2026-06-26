@@ -5,7 +5,7 @@ import { obligations } from "../data/mockData";
 
 export function PolicyComparatorPage() {
   return (
-    <div className="space-y-6 p-5 xl:p-8">
+    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
       <div>
         <p className="text-xs font-semibold uppercase text-accent-cyan">Policy Comparator</p>
         <h2 className="mt-2 text-3xl font-semibold text-text-primary">RAG-backed gap and conflict analysis</h2>

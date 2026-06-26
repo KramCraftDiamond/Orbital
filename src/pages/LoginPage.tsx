@@ -1,6 +1,5 @@
 import { Link } from "react-router";
 import {
-  ArrowRight,
   BadgeCheck,
   Eye,
   Fingerprint,
@@ -196,10 +195,9 @@ export function LoginPage() {
 
                   <Link
                     to="/app"
-                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#E1DCC9] text-sm font-semibold text-black transition hover:bg-[#f0ead8]"
+                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#E1DCC9] text-center text-sm font-semibold text-black transition hover:bg-[#f0ead8]"
                   >
                     Open command center
-                    <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
 

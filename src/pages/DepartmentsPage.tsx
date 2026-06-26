@@ -1,5 +1,4 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { AlertTriangle, CheckCircle2, Clock3, FileWarning } from "lucide-react";
 import { DepartmentPerformanceTable } from "../components/departments/DepartmentPerformanceTable";
 import { MetricCard } from "../components/ui/MetricCard";
 import { Panel, PanelHeader } from "../components/ui/panel";
@@ -16,7 +15,7 @@ const chartColors = {
 
 export function DepartmentsPage() {
   return (
-    <div className="space-y-6 p-5 xl:p-8">
+    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
       <div>
         <p className="text-xs font-semibold uppercase text-accent-cyan">Department Performance</p>
         <h2 className="mt-2 text-3xl font-semibold text-text-primary">Compliance operations performance</h2>
@@ -26,10 +25,10 @@ export function DepartmentsPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Assigned Obligations" value="274" change="+31 this month" icon={FileWarning} />
-        <MetricCard label="Closed Obligations" value="216" change="79% weighted closure" icon={CheckCircle2} tone="success" />
-        <MetricCard label="Overdue" value="24" change="Cybersecurity and Ops lead" icon={AlertTriangle} tone="warning" />
-        <MetricCard label="Avg Closure Time" value="8.3d" change="-1.4d vs last month" icon={Clock3} tone="violet" />
+        <MetricCard label="Assigned Obligations" value="274" change="+31 this month" />
+        <MetricCard label="Closed Obligations" value="216" change="79% weighted closure" tone="success" />
+        <MetricCard label="Overdue" value="24" change="Cybersecurity and Ops lead" tone="warning" />
+        <MetricCard label="Avg Closure Time" value="8.3d" change="-1.4d vs last month" tone="violet" />
       </div>
 
       <Panel>
