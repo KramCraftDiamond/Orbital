@@ -7,7 +7,7 @@ export function AuditTimeline({ events }: { events: AuditEvent[] }) {
       <div className="absolute bottom-0 left-2 top-2 w-px bg-border-strong" />
       {events.map((event) => (
         <div key={event.id} className="relative">
-          <span className="absolute -left-[26px] top-6 h-4 w-4 rounded-full border border-accent-cyan bg-background shadow-[0_0_24px_rgba(34,211,238,0.4)]" />
+          <span className="absolute -left-[26px] top-6 h-4 w-4 rounded-full border border-accent-cyan bg-background shadow-[0_0_24px_rgba(225,220,201,0.4)]" />
           <AuditEventCard event={event} />
         </div>
       ))}

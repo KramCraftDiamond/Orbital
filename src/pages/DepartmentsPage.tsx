@@ -5,6 +5,14 @@ import { MetricCard } from "../components/ui/MetricCard";
 import { Panel, PanelHeader } from "../components/ui/panel";
 import { departmentPerformance } from "../data/mockData";
 
+const chartColors = {
+  parchment: "#E1DCC9",
+  critical: "#A25236",
+  muted: "#8A7F6C",
+  tooltip: "#1F150C",
+  tooltipBorder: "rgba(225,220,201,0.22)",
+};
+
 export function DepartmentsPage() {
   return (
     <div className="space-y-6 p-5 xl:p-8">
@@ -28,12 +36,12 @@ export function DepartmentsPage() {
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={departmentPerformance} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid stroke="rgba(148,163,184,0.12)" vertical={false} />
-              <XAxis dataKey="department" tick={{ fill: "#94A3B8", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ background: "#0B1728", border: "1px solid rgba(148,163,184,0.22)", borderRadius: 8, color: "#E5F2FF" }} />
-              <Bar dataKey="closureRate" fill="#22D3EE" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="evidenceRejectionRate" fill="#FB7185" radius={[4, 4, 0, 0]} />
+              <CartesianGrid stroke="rgba(225,220,201,0.12)" vertical={false} />
+              <XAxis dataKey="department" tick={{ fill: chartColors.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: chartColors.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: chartColors.tooltip, border: `1px solid ${chartColors.tooltipBorder}`, borderRadius: 8, color: chartColors.parchment }} />
+              <Bar dataKey="closureRate" fill={chartColors.parchment} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="evidenceRejectionRate" fill={chartColors.critical} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

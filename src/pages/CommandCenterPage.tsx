@@ -33,6 +33,17 @@ import { Panel, PanelHeader } from "../components/ui/panel";
 import { RegulatorBadge, RiskBadge, StatusPill } from "../components/ui/badges";
 import { OrbitalIntelligenceGraph } from "../components/three/OrbitalIntelligenceGraph";
 
+const chartColors = {
+  parchment: "#E1DCC9",
+  softGold: "#C8B97A",
+  bronze: "#9C7743",
+  warning: "#B98236",
+  critical: "#A25236",
+  muted: "#8A7F6C",
+  tooltip: "#1F150C",
+  tooltipBorder: "rgba(225,220,201,0.22)",
+};
+
 export function CommandCenterPage() {
   const totalObligations = circulars.reduce((sum, circular) => sum + circular.totalObligations, 0);
   const highRisk = circulars.reduce((sum, circular) => sum + circular.highRiskCount, 0);
@@ -107,21 +118,21 @@ export function CommandCenterPage() {
               <AreaChart data={throughputTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="validatedFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22D3EE" stopOpacity={0.34} />
-                    <stop offset="95%" stopColor="#22D3EE" stopOpacity={0} />
+                    <stop offset="5%" stopColor={chartColors.parchment} stopOpacity={0.34} />
+                    <stop offset="95%" stopColor={chartColors.parchment} stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="closedFill2" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#34D399" stopOpacity={0.26} />
-                    <stop offset="95%" stopColor="#34D399" stopOpacity={0} />
+                    <stop offset="5%" stopColor={chartColors.softGold} stopOpacity={0.26} />
+                    <stop offset="95%" stopColor={chartColors.softGold} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="rgba(148,163,184,0.12)" vertical={false} />
-                <XAxis dataKey="day" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: "#0B1728", border: "1px solid rgba(148,163,184,0.22)", borderRadius: 8, color: "#E5F2FF" }} />
-                <Area type="monotone" dataKey="validated" stroke="#22D3EE" strokeWidth={2} fill="url(#validatedFill)" />
-                <Area type="monotone" dataKey="closed" stroke="#34D399" strokeWidth={2} fill="url(#closedFill2)" />
-                <Area type="monotone" dataKey="highRisk" stroke="#F59E0B" strokeWidth={2} fill="transparent" />
+                <CartesianGrid stroke="rgba(225,220,201,0.12)" vertical={false} />
+                <XAxis dataKey="day" tick={{ fill: chartColors.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: chartColors.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ background: chartColors.tooltip, border: `1px solid ${chartColors.tooltipBorder}`, borderRadius: 8, color: chartColors.parchment }} />
+                <Area type="monotone" dataKey="validated" stroke={chartColors.parchment} strokeWidth={2} fill="url(#validatedFill)" />
+                <Area type="monotone" dataKey="closed" stroke={chartColors.softGold} strokeWidth={2} fill="url(#closedFill2)" />
+                <Area type="monotone" dataKey="highRisk" stroke={chartColors.warning} strokeWidth={2} fill="transparent" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -138,7 +149,7 @@ export function CommandCenterPage() {
                       <Cell key={entry.regulator} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ background: "#0B1728", border: "1px solid rgba(148,163,184,0.22)", borderRadius: 8, color: "#E5F2FF" }} />
+                  <Tooltip contentStyle={{ background: chartColors.tooltip, border: `1px solid ${chartColors.tooltipBorder}`, borderRadius: 8, color: chartColors.parchment }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -163,13 +174,13 @@ export function CommandCenterPage() {
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={departmentPerformance} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid stroke="rgba(148,163,184,0.12)" vertical={false} />
-                <XAxis dataKey="department" tick={{ fill: "#94A3B8", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: "#0B1728", border: "1px solid rgba(148,163,184,0.22)", borderRadius: 8, color: "#E5F2FF" }} />
-                <Bar dataKey="closed" stackId="a" fill="#34D399" radius={[0, 0, 4, 4]} />
-                <Bar dataKey="assigned" stackId="a" fill="#22D3EE" />
-                <Bar dataKey="overdue" stackId="a" fill="#FB7185" radius={[4, 4, 0, 0]} />
+                <CartesianGrid stroke="rgba(225,220,201,0.12)" vertical={false} />
+                <XAxis dataKey="department" tick={{ fill: chartColors.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: chartColors.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ background: chartColors.tooltip, border: `1px solid ${chartColors.tooltipBorder}`, borderRadius: 8, color: chartColors.parchment }} />
+                <Bar dataKey="closed" stackId="a" fill={chartColors.softGold} radius={[0, 0, 4, 4]} />
+                <Bar dataKey="assigned" stackId="a" fill={chartColors.bronze} />
+                <Bar dataKey="overdue" stackId="a" fill={chartColors.critical} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

@@ -65,11 +65,11 @@ const riskTrend = [
 ];
 
 const regulatorMix = [
-  { name: "RBI", value: 42, color: "#22D3EE" },
-  { name: "SEBI", value: 18, color: "#A78BFA" },
-  { name: "NPCI", value: 15, color: "#34D399" },
-  { name: "CERT-In", value: 13, color: "#F59E0B" },
-  { name: "Other", value: 12, color: "#64748B" },
+  { name: "RBI", value: 42, color: "#E1DCC9" },
+  { name: "SEBI", value: 18, color: "#9C7743" },
+  { name: "NPCI", value: 15, color: "#C8B97A" },
+  { name: "CERT-In", value: 13, color: "#B98236" },
+  { name: "Other", value: 12, color: "#8A7F6C" },
 ];
 
 const departmentLoad = [
@@ -242,28 +242,28 @@ export function Dashboard() {
               <AreaChart data={riskTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="extractedFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22D3EE" stopOpacity={0.34} />
-                    <stop offset="95%" stopColor="#22D3EE" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#E1DCC9" stopOpacity={0.34} />
+                    <stop offset="95%" stopColor="#E1DCC9" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="closedFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#34D399" stopOpacity={0.28} />
-                    <stop offset="95%" stopColor="#34D399" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#C8B97A" stopOpacity={0.28} />
+                    <stop offset="95%" stopColor="#C8B97A" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="rgba(148, 163, 184, 0.12)" vertical={false} />
-                <XAxis dataKey="day" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="day" tick={{ fill: "#8A7F6C", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#8A7F6C", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{
-                    background: "#0B1728",
+                    background: "#1F150C",
                     border: "1px solid rgba(148, 163, 184, 0.22)",
                     borderRadius: "8px",
-                    color: "#E5F2FF",
+                    color: "#E1DCC9",
                   }}
                 />
-                <Area type="monotone" dataKey="extracted" stroke="#22D3EE" strokeWidth={2} fill="url(#extractedFill)" />
-                <Area type="monotone" dataKey="closed" stroke="#34D399" strokeWidth={2} fill="url(#closedFill)" />
-                <Area type="monotone" dataKey="highRisk" stroke="#F59E0B" strokeWidth={2} fill="transparent" />
+                <Area type="monotone" dataKey="extracted" stroke="#E1DCC9" strokeWidth={2} fill="url(#extractedFill)" />
+                <Area type="monotone" dataKey="closed" stroke="#C8B97A" strokeWidth={2} fill="url(#closedFill)" />
+                <Area type="monotone" dataKey="highRisk" stroke="#B98236" strokeWidth={2} fill="transparent" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -300,10 +300,10 @@ export function Dashboard() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      background: "#0B1728",
+                      background: "#1F150C",
                       border: "1px solid rgba(148, 163, 184, 0.22)",
                       borderRadius: "8px",
-                      color: "#E5F2FF",
+                      color: "#E1DCC9",
                     }}
                   />
                 </PieChart>
@@ -361,19 +361,19 @@ export function Dashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={departmentLoad} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid stroke="rgba(148, 163, 184, 0.12)" vertical={false} />
-                <XAxis dataKey="dept" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="dept" tick={{ fill: "#8A7F6C", fontSize: 12 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#8A7F6C", fontSize: 12 }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{
-                    background: "#0B1728",
+                    background: "#1F150C",
                     border: "1px solid rgba(148, 163, 184, 0.22)",
                     borderRadius: "8px",
-                    color: "#E5F2FF",
+                    color: "#E1DCC9",
                   }}
                 />
-                <Bar dataKey="closed" stackId="a" fill="#34D399" radius={[0, 0, 4, 4]} />
-                <Bar dataKey="open" stackId="a" fill="#22D3EE" />
-                <Bar dataKey="overdue" stackId="a" fill="#FB7185" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="closed" stackId="a" fill="#C8B97A" radius={[0, 0, 4, 4]} />
+                <Bar dataKey="open" stackId="a" fill="#9C7743" />
+                <Bar dataKey="overdue" stackId="a" fill="#A25236" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

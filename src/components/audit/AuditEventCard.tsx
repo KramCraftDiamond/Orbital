@@ -49,12 +49,12 @@ function LedgerItem({ label, value }: { label: string; value: string }) {
 
 function HashBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-border-default bg-[#030712] p-3">
+    <div className="rounded-md border border-border-default bg-[#050301] p-3">
       <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase text-text-muted">
         <ShieldCheck className="h-3.5 w-3.5 text-accent-success" />
         {label}
       </div>
-      <p className="break-all font-mono text-xs leading-5 text-[#c4d7f2]">{value}</p>
+      <p className="break-all font-mono text-xs leading-5 text-[#E1DCC9]">{value}</p>
     </div>
   );
 }

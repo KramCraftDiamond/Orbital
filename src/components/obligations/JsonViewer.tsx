@@ -5,7 +5,7 @@ export function JsonViewer({ value }: { value: unknown }) {
   const formatted = JSON.stringify(value, null, 2);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border-default bg-[#030712]">
+    <div className="overflow-hidden rounded-lg border border-border-default bg-[#050301]">
       <div className="flex items-center justify-between border-b border-border-default bg-surface-strong px-4 py-3">
         <div className="flex items-center gap-3">
           <CheckCircle2 className="h-4 w-4 text-accent-success" />
@@ -38,7 +38,7 @@ export function JsonViewer({ value }: { value: unknown }) {
         </span>
       </div>
 
-      <pre className="max-h-[640px] overflow-auto p-5 font-mono text-xs leading-6 text-[#c4d7f2]">
+      <pre className="max-h-[640px] overflow-auto p-5 font-mono text-xs leading-6 text-[#E1DCC9]">
         {formatted}
       </pre>
     </div>

@@ -27,7 +27,7 @@ const navItems = [
 
 export function Sidebar() {
   return (
-    <aside className="hidden w-72 shrink-0 border-r border-border-default bg-[#06101e]/95 lg:flex lg:flex-col">
+    <aside className="hidden w-72 shrink-0 border-r border-border-default bg-[#080503]/95 lg:flex lg:flex-col">
       <div className="border-b border-border-default px-5 py-5">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-accent-cyan/30 bg-accent-cyan/10 text-accent-cyan">

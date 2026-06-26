@@ -24,13 +24,13 @@ export function AuditTrailPage() {
           <Panel>
             <PanelHeader title="Hash Integrity" eyebrow="Current chain status" />
             <div className="space-y-4">
-              <div className="rounded-md border border-border-default bg-[#030712] p-4">
+              <div className="rounded-md border border-border-default bg-[#050301] p-4">
                 <p className="mb-2 text-xs font-semibold uppercase text-text-muted">Current event hash</p>
-                <p className="break-all font-mono text-xs leading-5 text-[#c4d7f2]">{latest.eventHash}</p>
+                <p className="break-all font-mono text-xs leading-5 text-[#E1DCC9]">{latest.eventHash}</p>
               </div>
-              <div className="rounded-md border border-border-default bg-[#030712] p-4">
+              <div className="rounded-md border border-border-default bg-[#050301] p-4">
                 <p className="mb-2 text-xs font-semibold uppercase text-text-muted">Previous event hash</p>
-                <p className="break-all font-mono text-xs leading-5 text-[#c4d7f2]">{latest.previousHash}</p>
+                <p className="break-all font-mono text-xs leading-5 text-[#E1DCC9]">{latest.previousHash}</p>
               </div>
               <div className="rounded-md border border-accent-success/25 bg-accent-success/10 p-4">
                 <div className="flex items-center gap-2 text-sm font-semibold text-accent-success">

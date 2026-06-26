@@ -33,11 +33,11 @@ export function OrbitalIntelligenceGraph({
       const root = new THREE.Group();
       scene.add(root);
 
-      const coreMaterial = new THREE.MeshBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.92 });
+      const coreMaterial = new THREE.MeshBasicMaterial({ color: 0xe1dcc9, transparent: true, opacity: 0.92 });
       const core = new THREE.Mesh(new THREE.SphereGeometry(0.26, 32, 32), coreMaterial);
       root.add(core);
 
-      const ringMaterial = new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.22 });
+      const ringMaterial = new THREE.LineBasicMaterial({ color: 0xe1dcc9, transparent: true, opacity: 0.22 });
       for (let i = 0; i < 3; i += 1) {
         const points: Array<InstanceType<typeof THREE.Vector3>> = [];
         const radius = 1.35 + i * 0.58;
@@ -84,7 +84,7 @@ export function OrbitalIntelligenceGraph({
       particleGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
       const particles = new THREE.Points(
         particleGeometry,
-        new THREE.PointsMaterial({ color: 0x94a3b8, size: 0.018, transparent: true, opacity: 0.42 }),
+        new THREE.PointsMaterial({ color: 0x8a7f6c, size: 0.018, transparent: true, opacity: 0.42 }),
       );
       root.add(particles);
 
@@ -140,7 +140,7 @@ export function OrbitalIntelligenceGraph({
   return (
     <div
       ref={containerRef}
-      className={`relative min-h-72 overflow-hidden rounded-lg border border-border-default bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.16),rgba(5,11,20,0)_55%)] ${className}`}
+      className={`relative min-h-72 overflow-hidden rounded-lg border border-border-default bg-[radial-gradient(circle_at_50%_50%,rgba(225,220,201,0.14),rgba(0,0,0,0)_55%)] ${className}`}
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0))]" />
       <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex items-end justify-between">
