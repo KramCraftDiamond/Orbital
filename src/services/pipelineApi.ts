@@ -1,4 +1,4 @@
-import type { ProcessingStep } from "../types/orbital";
+import type { Evidence, ProcessingStep } from "../types/orbital";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -73,18 +73,95 @@ export type DocumentSummary = {
   validation?: unknown;
 };
 
+export type BackendValidationIssue = {
+  obligation_id?: string;
+  field?: string;
+  current_value?: string;
+  correct_value?: string;
+  reason?: string;
+};
+
+export type BackendValidation = {
+  missed_obligations?: string[];
+  incorrect_extractions?: BackendValidationIssue[];
+  missing_effective_date?: string | null;
+  overall_confidence?: number;
+  validation_notes?: string;
+};
+
+export type BackendObligation = {
+  id?: string;
+  section_id?: string;
+  clause_number?: string;
+  actor?: string;
+  action?: string;
+  obligation_type?: string;
+  trigger?: string;
+  deadline?: string | {
+    text?: string;
+    value?: string | null;
+    absolute_date?: string | null;
+    duration?: string | null;
+    urgency?: string;
+  } | null;
+  effective_date?: string | null;
+  domain?: string;
+  departments?: string[];
+  department?: string[];
+  severity?: "low" | "medium" | "high" | "critical";
+  severity_reason?: string;
+  evidence_required?: string[];
+  confidence?: number;
+  notes?: string | null;
+  penalty_if_missed?: string | null;
+};
+
+export type BackendMapCard = {
+  id: string;
+  obligationId: string;
+  title: string;
+  summary: string;
+  sourceRegulator: string;
+  circularTitle: string;
+  sourceClause: string;
+  assignedDepartments: string[];
+  owner: string;
+  severity: "low" | "medium" | "high" | "critical";
+  deadline: string;
+  status: string;
+  evidenceRequired: string[];
+  aiReasoning: string;
+  validationChecklist: string[];
+  actionVerb?: string;
+  measurableOutcome?: string;
+  acceptanceCriteria?: string[];
+  evidenceValidationRules?: string[];
+  ownerDepartment?: string;
+  reviewerDepartment?: string;
+  deadlineType?: string;
+  escalationLevel?: string;
+  closurePolicy?: string;
+};
+
 export type ObligationsResponse = {
   job_id: string;
   document: DocumentSummary;
-  obligations: unknown[];
-  validation: unknown;
+  obligations: BackendObligation[];
+  validation: BackendValidation;
 };
 
 export type MapCardsResponse = {
   job_id: string;
   document: DocumentSummary;
-  map_cards: unknown[];
+  map_cards: BackendMapCard[];
 };
+
+export type AuditEventsResponse = {
+  events: unknown[];
+  verified: boolean;
+};
+
+export type EvidenceValidationResponse = Evidence;
 
 export const intakeStages: PipelineStage[] = [
   {
@@ -181,6 +258,20 @@ export async function fetchMapCards(jobId: string) {
 
 export async function fetchGraph(jobId: string) {
   return request<unknown>(`/api/documents/${jobId}/graph`);
+}
+
+export async function fetchAuditEvents() {
+  return request<AuditEventsResponse>("/api/audit/events");
+}
+
+export async function uploadEvidence(mapCardId: string, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return request<EvidenceValidationResponse>(`/api/map-cards/${encodeURIComponent(mapCardId)}/evidence/upload`, {
+    method: "POST",
+    body: formData,
+  });
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {

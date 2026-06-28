@@ -1,13 +1,24 @@
+import { useRef } from "react";
 import { EvidenceChecklist } from "../components/evidence/EvidenceChecklist";
 import { EvidenceValidationPanel } from "../components/evidence/EvidenceValidationPanel";
 import { DepartmentChip, RiskBadge, StatusPill } from "../components/ui/badges";
 import { Button, PageContainer, PageHeader } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
-import { evidence, mapCards } from "../data/mockData";
+import { usePipelineWorkflow } from "../state/PipelineWorkflowContext";
 
 export function EvidencePortalPage() {
-  const selectedMap = mapCards[0];
-  const selectedEvidence = evidence[0];
+  const workflow = usePipelineWorkflow();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const selectedMap = workflow.mapCards[0];
+  const selectedEvidence =
+    workflow.evidenceItems.find((item) => item.mapCardId === selectedMap?.id) ?? workflow.evidenceItems[0];
+
+  const handleEvidenceFile = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (file && selectedMap) {
+      await workflow.submitEvidence(selectedMap.id, file);
+    }
+  };
 
   return (
     <PageContainer>
@@ -36,9 +47,16 @@ export function EvidencePortalPage() {
             <p className="mt-2 text-sm text-text-secondary">
               Add reports, policy updates, screenshots, logs, or sign-off records for this MAP Card.
             </p>
-            <Button variant="primary" className="mt-5" type="button">
+            <Button variant="primary" className="mt-5" onClick={() => fileInputRef.current?.click()} type="button">
               Select files
             </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,.txt,.md,.csv,.log,.png,.jpg,.jpeg"
+              className="hidden"
+              onChange={(event) => handleEvidenceFile(event.target.files)}
+            />
           </div>
         </Panel>
 
@@ -49,11 +67,11 @@ export function EvidencePortalPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)]">
-        <EvidenceValidationPanel evidence={selectedEvidence} />
+        {selectedEvidence && <EvidenceValidationPanel evidence={selectedEvidence} />}
         <Panel>
           <PanelHeader title="Uploaded Files" eyebrow="Department submission" />
           <div className="space-y-3">
-            {evidence.map((item) => (
+            {workflow.evidenceItems.map((item) => (
               <div key={item.id} className="rounded-md border border-border-default bg-surface-strong p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="text-sm font-semibold text-text-primary">{item.fileName}</span>

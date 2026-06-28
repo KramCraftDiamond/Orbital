@@ -14,6 +14,7 @@ export function UploadPage() {
   const circular = workflow.metadata ?? circulars[0];
   const isProcessing = workflow.status === "processing";
   const intakeComplete = workflow.status === "intake_complete";
+  const hasLiveMetadata = Boolean(workflow.metadata);
 
   return (
     <PageContainer>
@@ -30,6 +31,18 @@ export function UploadPage() {
         onSourceUrlChange={workflow.setSourceUrl}
         onVerifySource={workflow.verifySource}
       />
+
+      {workflow.apiError && (
+        <Panel>
+          <div className="flex gap-3 rounded-md border border-accent-warning/25 bg-accent-warning/10 p-4 text-sm text-text-secondary">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-accent-warning" />
+            <div>
+              <p className="font-semibold text-text-primary">Pipeline needs attention</p>
+              <p className="mt-1">{workflow.apiError}</p>
+            </div>
+          </div>
+        </Panel>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.2fr)]">
         <Panel>
@@ -112,7 +125,7 @@ export function UploadPage() {
             <Summary icon={FileSearch} label="Clauses parsed" value={String(circular.totalClauses)} />
             <Summary icon={ShieldCheck} label="Obligations found" value={String(circular.totalObligations)} />
             <Summary icon={AlertTriangle} label="High-risk obligations" value={String(circular.highRiskCount)} warning />
-            <Summary icon={CheckCircle2} label="JSON validation" value="Schema valid" />
+            <Summary icon={CheckCircle2} label="JSON validation" value={hasLiveMetadata ? circular.validationStatus : "Awaiting run"} />
           </div>
         </Panel>
       </div>
@@ -125,15 +138,15 @@ export function UploadPage() {
               {intakeComplete ? "Metadata is ready for validation" : "Start the processing sequence"}
             </h3>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">
-              This mocked control path mirrors the backend sequence so every button has a destination
-              before the API wrapper is available.
+              This run uploads the selected document to the FastAPI pipeline, polls backend job status,
+              and loads extracted obligations plus MAP cards when processing completes.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button
               variant="primary"
               onClick={workflow.startProcessing}
-              disabled={isProcessing}
+              disabled={isProcessing || !workflow.selectedFile}
               type="button"
             >
               {isProcessing ? "Processing..." : "Start processing"}

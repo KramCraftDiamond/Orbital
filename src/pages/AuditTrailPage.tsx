@@ -2,9 +2,11 @@ import { Fingerprint, LockKeyhole, ShieldCheck } from "lucide-react";
 import { AuditTimeline } from "../components/audit/AuditTimeline";
 import { PageContainer, PageHeader } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
-import { auditEvents } from "../data/mockData";
+import { usePipelineWorkflow } from "../state/PipelineWorkflowContext";
 
 export function AuditTrailPage() {
+  const workflow = usePipelineWorkflow();
+  const auditEvents = workflow.auditEvents;
   const latest = auditEvents[auditEvents.length - 1];
 
   return (

@@ -16,6 +16,9 @@ import shutil
 import sys
 import traceback
 import uuid
+import hashlib
+import re
+import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -30,11 +33,14 @@ if str(BASE_DIR) not in sys.path:
 
 UPLOAD_DIR = BASE_DIR / "uploads"
 OUTPUT_DIR = BASE_DIR / "output"
+EVIDENCE_DIR = BASE_DIR / "evidence_uploads"
 DB_PATH = Path(os.environ.get("DB_PATH", BASE_DIR / "orbital.db"))
 ALLOWED_SUFFIXES = {".pdf", ".docx", ".pptx"}
+ALLOWED_EVIDENCE_SUFFIXES = {".pdf", ".docx", ".txt", ".md", ".csv", ".log", ".png", ".jpg", ".jpeg"}
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="ORBITAL API", version="0.1.0")
 
@@ -47,6 +53,8 @@ app.add_middleware(
 )
 
 JOBS: dict[str, dict[str, Any]] = {}
+AUDIT_EVENTS: list[dict[str, Any]] = []
+EVIDENCE_RESULTS: dict[str, list[dict[str, Any]]] = {}
 
 
 @app.get("/api/health")
@@ -90,6 +98,13 @@ async def upload_document(
         "summary": None,
         "error": None,
     }
+    append_audit_event(
+        entity_type="Circular",
+        entity_id=job_id,
+        action="Document uploaded",
+        actor="ORBITAL Intake",
+        details=f"{file.filename} accepted for backend processing.",
+    )
 
     background_tasks.add_task(
         run_pipeline_job,
@@ -145,6 +160,59 @@ def get_map_cards(job_id: str) -> dict[str, Any]:
     }
 
 
+@app.post("/api/map-cards/{map_id}/evidence/upload")
+async def upload_evidence(map_id: str, file: UploadFile = File(...)) -> dict[str, Any]:
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in ALLOWED_EVIDENCE_SUFFIXES:
+        raise HTTPException(status_code=400, detail="Evidence file type is not supported.")
+
+    card = find_map_card(map_id)
+    if not card:
+        raise HTTPException(status_code=404, detail="MAP card not found. Generate MAP cards before uploading evidence.")
+
+    evidence_id = f"EV-{uuid.uuid4().hex[:10].upper()}"
+    evidence_path = EVIDENCE_DIR / f"{evidence_id}{suffix}"
+    with evidence_path.open("wb") as out_file:
+        shutil.copyfileobj(file.file, out_file)
+
+    evidence_text = extract_evidence_text(evidence_path)
+    requirements = card.get("validationChecklist") or card.get("evidenceRequired") or []
+    matched, missing = validate_evidence(requirements, evidence_text)
+    result_label = evidence_result_label(matched, missing)
+    result = {
+        "id": evidence_id,
+        "mapCardId": map_id,
+        "fileName": file.filename,
+        "uploadedBy": "Department user",
+        "uploadedAt": datetime.utcnow().isoformat() + "Z",
+        "validationResult": result_label,
+        "matchedRequirements": matched,
+        "missingRequirements": missing,
+        "recommendation": evidence_recommendation(result_label, missing),
+        "requiresHumanReview": True,
+    }
+    EVIDENCE_RESULTS.setdefault(map_id, []).append(result)
+    append_audit_event(
+        entity_type="Evidence",
+        entity_id=evidence_id,
+        action="Evidence uploaded and validated",
+        actor="ORBITAL Evidence Agent",
+        details=f"{file.filename} checked against {len(requirements)} MAP card requirement(s); result={result_label}.",
+        severity=card.get("severity"),
+    )
+    return result
+
+
+@app.get("/api/map-cards/{map_id}/evidence")
+def get_evidence(map_id: str) -> dict[str, Any]:
+    return {"mapCardId": map_id, "evidence": EVIDENCE_RESULTS.get(map_id, [])}
+
+
+@app.get("/api/audit/events")
+def get_audit_events() -> dict[str, Any]:
+    return {"events": AUDIT_EVENTS, "verified": verify_audit_chain()}
+
+
 @app.get("/api/circulars")
 def list_circulars() -> dict[str, Any]:
     circulars = []
@@ -180,8 +248,26 @@ def run_pipeline_job(
             run_analysis=run_analysis,
             db_path=str(DB_PATH),
         )
+        append_audit_event(
+            entity_type="Circular",
+            entity_id=job_id,
+            action="Pipeline completed",
+            actor="ORBITAL Pipeline",
+            details=(
+                f"Extracted {summary.get('obligations', 0)} obligation(s), "
+                f"{summary.get('after_dedup', 0)} after deduplication."
+            ),
+        )
         update_job(job_id, status="completed", summary=summary)
     except Exception as exc:
+        append_audit_event(
+            entity_type="System",
+            entity_id=job_id,
+            action="Pipeline failed",
+            actor="ORBITAL Pipeline",
+            details=str(exc),
+            severity="high",
+        )
         update_job(job_id, status="failed", error=str(exc), traceback=traceback.format_exc())
 
 
@@ -252,6 +338,18 @@ def to_map_card(document: dict[str, Any], obligation: dict[str, Any], index: int
     deadline = obligation.get("deadline") or {}
     deadline_text = deadline.get("absolute_date") or deadline.get("text") if isinstance(deadline, dict) else deadline
 
+    owner_department = departments[0] if departments else "Compliance"
+    reviewer_department = "Internal Audit" if "Internal Audit" not in departments else "Compliance"
+    action_verb = action.strip().split(" ", 1)[0].capitalize() if action.strip() else "Review"
+    acceptance_criteria = [
+        f"Accountable department confirms completion of: {action}",
+        f"Evidence references source clause {obligation.get('clause_number') or obligation.get('section_id') or 'N/A'}.",
+        "Authorized compliance reviewer records final approval before closure.",
+    ]
+    evidence_rules = [
+        make_validation_rule(item) for item in evidence
+    ] or ["Evidence must be readable, attributable to the assigned department, and tied to the MAP card."]
+
     return {
         "id": f"MAP-{obligation_id}",
         "obligationId": obligation_id,
@@ -261,13 +359,22 @@ def to_map_card(document: dict[str, Any], obligation: dict[str, Any], index: int
         "circularTitle": document.get("title") or "Uploaded circular",
         "sourceClause": obligation.get("clause_number") or obligation.get("section_id") or "N/A",
         "assignedDepartments": departments,
-        "owner": departments[0] if departments else "Compliance",
+        "owner": owner_department,
         "severity": obligation.get("severity") or "medium",
         "deadline": deadline_text or document.get("effective_date") or "Not specified",
         "status": "New",
         "evidenceRequired": evidence,
         "aiReasoning": obligation.get("severity_reason") or "Generated from validated obligation extraction.",
-        "validationChecklist": [f"Provide {item}" for item in evidence],
+        "validationChecklist": evidence_rules,
+        "actionVerb": action_verb,
+        "measurableOutcome": f"{owner_department} completes the control action and supplies evidence that satisfies reviewer checks.",
+        "acceptanceCriteria": acceptance_criteria,
+        "evidenceValidationRules": evidence_rules,
+        "ownerDepartment": owner_department,
+        "reviewerDepartment": reviewer_department,
+        "deadlineType": "explicit" if deadline_text else "derived_or_missing",
+        "escalationLevel": "L2" if obligation.get("severity") in {"high", "critical"} else "L1",
+        "closurePolicy": "AI may recommend closure, but a human compliance reviewer must approve final status.",
     }
 
 
@@ -277,6 +384,132 @@ def make_title(action: str) -> str:
         return "Review regulatory obligation"
     title = " ".join(words[:10]).strip()
     return title[0].upper() + title[1:]
+
+
+def make_validation_rule(evidence_item: str) -> str:
+    item = str(evidence_item).strip()
+    if not item:
+        return "Evidence item must be provided and tied to this MAP card."
+    return f"Evidence must contain readable proof for: {item}."
+
+
+def find_map_card(map_id: str) -> dict[str, Any] | None:
+    for job in JOBS.values():
+        if job.get("status") != "completed":
+            continue
+        try:
+            document = read_job_json(job["job_id"])
+        except FileNotFoundError:
+            continue
+        for index, obligation in enumerate(document.get("obligations", [])):
+            card = to_map_card(document, obligation, index)
+            if card["id"] == map_id:
+                return card
+    return None
+
+
+def extract_evidence_text(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".pdf":
+        try:
+            import fitz
+
+            with fitz.open(path) as doc:
+                return "\n".join(page.get_text() for page in doc)
+        except Exception:
+            return path.read_bytes().decode("utf-8", errors="ignore")
+    if suffix == ".docx":
+        try:
+            with zipfile.ZipFile(path) as archive:
+                xml = archive.read("word/document.xml").decode("utf-8", errors="ignore")
+                return re.sub(r"<[^>]+>", " ", xml)
+        except Exception:
+            return path.read_bytes().decode("utf-8", errors="ignore")
+    return path.read_bytes().decode("utf-8", errors="ignore")
+
+
+def validate_evidence(requirements: list[str], evidence_text: str) -> tuple[list[str], list[str]]:
+    text = evidence_text.lower()
+    matched: list[str] = []
+    missing: list[str] = []
+    for requirement in requirements:
+        keywords = extract_keywords(requirement)
+        hits = sum(1 for keyword in keywords if keyword in text)
+        if keywords and hits >= max(1, min(3, len(keywords)) // 2):
+            matched.append(requirement)
+        else:
+            missing.append(requirement)
+    return matched, missing
+
+
+def extract_keywords(value: str) -> list[str]:
+    stopwords = {
+        "the", "and", "for", "with", "must", "contain", "readable", "proof", "evidence",
+        "provide", "provided", "this", "that", "from", "against", "card", "map",
+    }
+    words = re.findall(r"[a-zA-Z][a-zA-Z0-9/-]{3,}", value.lower())
+    return [word for word in words if word not in stopwords][:8]
+
+
+def evidence_result_label(matched: list[str], missing: list[str]) -> str:
+    if matched and not missing:
+        return "Pass"
+    if matched and missing:
+        return "Partial"
+    return "Human Review Required"
+
+
+def evidence_recommendation(result_label: str, missing: list[str]) -> str:
+    if result_label == "Pass":
+        return "Evidence satisfies the automated checklist. Route to human reviewer for final closure."
+    if result_label == "Partial":
+        return f"Request supplementary evidence for {len(missing)} missing requirement(s) before approval."
+    return "Automated validation could not confirm the checklist. Human review and revised evidence are required."
+
+
+def append_audit_event(
+    entity_type: str,
+    entity_id: str,
+    action: str,
+    actor: str,
+    details: str,
+    severity: str | None = None,
+) -> dict[str, Any]:
+    previous_hash = AUDIT_EVENTS[-1]["eventHash"] if AUDIT_EVENTS else "GENESIS"
+    timestamp = datetime.utcnow().isoformat() + "Z"
+    event_id = f"AUD-{len(AUDIT_EVENTS) + 1:06d}"
+    payload = f"{previous_hash}|{timestamp}|{actor}|{action}|{entity_id}|{details}"
+    event_hash = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    event = {
+        "id": event_id,
+        "entityType": entity_type,
+        "entityId": entity_id,
+        "action": action,
+        "actor": actor,
+        "timestamp": timestamp,
+        "details": details,
+        "eventHash": event_hash,
+        "previousHash": previous_hash,
+        "severity": severity,
+    }
+    AUDIT_EVENTS.append(event)
+    return event
+
+
+def verify_audit_chain() -> bool:
+    previous_hash = "GENESIS"
+    for event in AUDIT_EVENTS:
+        if event.get("previousHash") != previous_hash:
+            return False
+        payload = (
+            f"{event.get('previousHash')}|{event.get('timestamp')}|{event.get('actor')}|"
+            f"{event.get('action')}|{event.get('entityId')}|{event.get('details')}"
+        )
+        expected = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        if event.get("eventHash") != expected:
+            return False
+        previous_hash = expected
+    return True
 
 
 @app.exception_handler(FileNotFoundError)

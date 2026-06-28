@@ -15,8 +15,6 @@ import {
 import {
   circulars,
   departmentPerformance,
-  evidence,
-  mapCards,
   regulatorDistribution,
   throughputTrend,
 } from "../data/mockData";
@@ -26,6 +24,7 @@ import { Panel, PanelHeader } from "../components/ui/panel";
 import { RegulatorBadge, RiskBadge, StatusPill } from "../components/ui/badges";
 import { OrbitalIntelligenceGraph } from "../components/three/OrbitalIntelligenceGraph";
 import { Leaderboard } from "../components/dashboard/Leaderboard";
+import { usePipelineWorkflow } from "../state/PipelineWorkflowContext";
 
 const chartColors = {
   primary: "#412D15",
@@ -40,10 +39,15 @@ const chartColors = {
 };
 
 export function CommandCenterPage() {
-  const totalObligations = circulars.reduce((sum, circular) => sum + circular.totalObligations, 0);
-  const highRisk = circulars.reduce((sum, circular) => sum + circular.highRiskCount, 0);
-  const overdue = mapCards.filter((card) => card.status === "Overdue").length;
-  const pendingEvidence = evidence.filter((item) => item.validationResult !== "Pass").length;
+  const workflow = usePipelineWorkflow();
+  const activeCirculars = workflow.metadata ? [workflow.metadata] : circulars;
+  const activeCards = workflow.mapCards;
+  const activeEvidence = workflow.evidenceItems;
+  const totalObligations = activeCirculars.reduce((sum, circular) => sum + circular.totalObligations, 0);
+  const highRisk = activeCirculars.reduce((sum, circular) => sum + circular.highRiskCount, 0);
+  const overdue = activeCards.filter((card) => card.status === "Overdue").length;
+  const pendingEvidence = activeEvidence.filter((item) => item.validationResult !== "Pass").length;
+  const validationLabel = workflow.validationScore > 0 ? `${Math.round(workflow.validationScore * 100)}%` : "Awaiting run";
 
   return (
     <PageContainer>
@@ -62,9 +66,9 @@ export function CommandCenterPage() {
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
                 {[
-                  ["JSON valid", "94%"],
-                  ["Human review", "21 items"],
-                  ["Audit chain", "100% locked"],
+                  ["JSON valid", validationLabel],
+                  ["Human review", `${workflow.validationIssues.length || pendingEvidence} items`],
+                  ["Audit chain", `${workflow.auditEvents.length} events`],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-md border border-border-default bg-surface-strong p-3">
                     <p className="text-[10px] uppercase text-text-muted">{label}</p>
@@ -80,7 +84,7 @@ export function CommandCenterPage() {
         <Panel>
           <PanelHeader title="Urgent Attention" eyebrow="Next 7 days" />
           <div className="space-y-3">
-            {mapCards.map((card) => (
+            {activeCards.map((card) => (
               <div key={card.id} className="rounded-md border border-border-default bg-surface-strong p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-2">
                   <RegulatorBadge regulator={card.sourceRegulator} />
@@ -99,10 +103,10 @@ export function CommandCenterPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Circulars Processed" value={String(circulars.length + 141)} change="+18 this week" />
-        <MetricCard label="Obligations Extracted" value={String(totalObligations + 1247)} change="94% schema-valid" tone="violet" />
-        <MetricCard label="High-Risk Open" value={String(highRisk + 20)} change={`${overdue + 7} due in 7 days`} tone="warning" />
-        <MetricCard label="Closure Rate" value="87%" change={`${pendingEvidence + 18} evidence items pending`} tone="success" />
+        <MetricCard label="Circulars Processed" value={String(activeCirculars.length)} change={workflow.dataset === "live" ? "Current backend run" : "Demo seed data"} />
+        <MetricCard label="Obligations Extracted" value={String(totalObligations)} change={`${validationLabel} schema confidence`} tone="violet" />
+        <MetricCard label="High-Risk Open" value={String(highRisk)} change={`${overdue} overdue cards`} tone="warning" />
+        <MetricCard label="Closure Rate" value={pendingEvidence ? "In review" : "Ready"} change={`${pendingEvidence} evidence items pending`} tone="success" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
@@ -184,7 +188,7 @@ export function CommandCenterPage() {
         <Panel>
           <PanelHeader title="Validation Queue" eyebrow="Evidence review" />
           <div className="space-y-3">
-            {evidence.map((item) => (
+            {activeEvidence.map((item) => (
               <div key={item.id} className="rounded-md border border-border-default bg-surface-strong p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="font-mono text-xs text-text-muted">{item.id}</span>

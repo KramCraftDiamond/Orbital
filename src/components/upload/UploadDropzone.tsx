@@ -1,10 +1,11 @@
+import { useRef } from "react";
 import { Button } from "../ui/layout";
 
 type UploadDropzoneProps = {
   selectedFileName: string;
   sourceUrl: string;
   sourceVerified: boolean;
-  onSelectFile: (fileName: string) => void;
+  onSelectFile: (file: File) => void;
   onSourceUrlChange: (value: string) => void;
   onVerifySource: () => void;
 };
@@ -17,8 +18,24 @@ export function UploadDropzone({
   onSourceUrlChange,
   onVerifySource,
 }: UploadDropzoneProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFiles = (files: FileList | null) => {
+    const file = files?.[0];
+    if (file) {
+      onSelectFile(file);
+    }
+  };
+
   return (
-    <div className="rounded-lg border border-dashed border-border-active bg-surface-strong p-6">
+    <div
+      className="rounded-lg border border-dashed border-border-active bg-surface-strong p-6"
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault();
+        handleFiles(event.dataTransfer.files);
+      }}
+    >
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h3 className="text-xl font-semibold text-text-primary">Upload regulatory circular</h3>
@@ -35,11 +52,18 @@ export function UploadDropzone({
         <Button
           variant="primary"
           className="h-12 px-5"
-          onClick={() => onSelectFile("Sample RBI circular.pdf")}
+          onClick={() => fileInputRef.current?.click()}
           type="button"
         >
           Select circular
         </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.docx,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+          className="hidden"
+          onChange={(event) => handleFiles(event.target.files)}
+        />
       </div>
 
       {selectedFileName && (

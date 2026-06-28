@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import { MAPCard } from "../components/map-cards/MAPCard";
 import { Button, PageContainer, PageHeader } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
-import { mapCards } from "../data/mockData";
 import { usePipelineWorkflow } from "../state/PipelineWorkflowContext";
 
 export function MAPCardsPage() {
@@ -11,10 +10,11 @@ export function MAPCardsPage() {
   const workflow = usePipelineWorkflow();
   const [severityFilter, setSeverityFilter] = useState<"all" | "high">("all");
   const [acknowledgedCards, setAcknowledgedCards] = useState<string[]>([]);
+  const activeCards = workflow.mapCards;
   const visibleCards =
     severityFilter === "high"
-      ? mapCards.filter((card) => card.severity === "high" || card.severity === "critical")
-      : mapCards;
+      ? activeCards.filter((card) => card.severity === "high" || card.severity === "critical")
+      : activeCards;
 
   return (
     <PageContainer>

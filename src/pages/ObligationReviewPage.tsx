@@ -1,27 +1,40 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, FileSearch, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router";
 import { JsonViewer } from "../components/obligations/JsonViewer";
 import { DepartmentChip, RiskBadge, StatusPill } from "../components/ui/badges";
 import { Button, InfoRow, PageContainer, PageHeader } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
-import { obligationJsonPreview, obligations } from "../data/mockData";
+import { obligationJsonPreview } from "../data/mockData";
 import { cn } from "../lib/ui";
 import { usePipelineWorkflow } from "../state/PipelineWorkflowContext";
 
 export function ObligationReviewPage() {
   const navigate = useNavigate();
   const workflow = usePipelineWorkflow();
-  const [selectedId, setSelectedId] = useState(obligations[0]?.id ?? "");
+  const activeObligations = workflow.obligations;
+  const [selectedId, setSelectedId] = useState(activeObligations[0]?.id ?? "");
   const selected = useMemo(
-    () => obligations.find((obligation) => obligation.id === selectedId) ?? obligations[0],
-    [selectedId],
+    () => activeObligations.find((obligation) => obligation.id === selectedId) ?? activeObligations[0],
+    [activeObligations, selectedId],
   );
+  const jsonPreview = workflow.rawObligations.length
+    ? {
+        document: workflow.metadata,
+        obligations: workflow.rawObligations,
+      }
+    : obligationJsonPreview;
   const hasValidationRun = workflow.validationScore > 0;
   const aboveThreshold = workflow.validationScore >= workflow.validationThreshold;
   const needsRepair = workflow.validationIssues.some((issue) => issue.severity === "failed");
   const isRepairing = workflow.status === "repair_running";
   const isGeneratingMaps = workflow.status === "map_generating";
+
+  useEffect(() => {
+    if (!activeObligations.some((obligation) => obligation.id === selectedId)) {
+      setSelectedId(activeObligations[0]?.id ?? "");
+    }
+  }, [activeObligations, selectedId]);
 
   return (
     <PageContainer>
@@ -51,9 +64,9 @@ export function ObligationReviewPage() {
 
       <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         <Panel className="xl:sticky xl:top-24 xl:max-h-[calc(100vh-7rem)] xl:overflow-hidden">
-          <PanelHeader title="Obligation Queue" eyebrow={`${obligations.length} extracted`} />
+          <PanelHeader title="Obligation Queue" eyebrow={`${activeObligations.length} extracted`} />
           <div className="space-y-3 xl:max-h-[calc(100vh-12rem)] xl:overflow-y-auto xl:pr-1">
-            {obligations.map((obligation) => (
+            {activeObligations.map((obligation) => (
               <button
                 key={obligation.id}
                 type="button"
@@ -207,7 +220,7 @@ export function ObligationReviewPage() {
           </Panel>
 
           <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
-            <JsonViewer value={obligationJsonPreview} maxHeight="460px" />
+            <JsonViewer value={jsonPreview} maxHeight="460px" />
             <Panel>
               <PanelHeader title="Validation Findings" eyebrow="Field-level review" />
               <div className="space-y-3">
