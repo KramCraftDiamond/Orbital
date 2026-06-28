@@ -2,7 +2,7 @@ import { NavLink } from "react-router";
 import { cn } from "../../lib/ui";
 
 const navItems = [
-  { path: "/app", label: "Command Center", sublabel: "Compliance cockpit", end: true },
+  { path: "/app", label: "Supervisor Dashboard", sublabel: "Metrics and progress", end: true },
   { path: "/app/upload", label: "Upload Circular", sublabel: "OCR and parsing" },
   { path: "/app/obligations", label: "Obligation Review", sublabel: "Validated JSON" },
   { path: "/app/maps", label: "MAP Cards", sublabel: "Department tasks" },

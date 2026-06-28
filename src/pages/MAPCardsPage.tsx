@@ -1,8 +1,20 @@
+import { useState } from "react";
+import { useNavigate } from "react-router";
 import { MAPCard } from "../components/map-cards/MAPCard";
 import { Panel, PanelHeader } from "../components/ui/panel";
 import { mapCards } from "../data/mockData";
+import { usePipelineWorkflow } from "../state/PipelineWorkflowContext";
 
 export function MAPCardsPage() {
+  const navigate = useNavigate();
+  const workflow = usePipelineWorkflow();
+  const [severityFilter, setSeverityFilter] = useState<"all" | "high">("all");
+  const [acknowledgedCards, setAcknowledgedCards] = useState<string[]>([]);
+  const visibleCards =
+    severityFilter === "high"
+      ? mapCards.filter((card) => card.severity === "high" || card.severity === "critical")
+      : mapCards;
+
   return (
     <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -14,15 +26,53 @@ export function MAPCardsPage() {
             deadlines, evidence requirements, AI reasoning, validation checklists, and audit links.
           </p>
         </div>
-        <button className="inline-flex h-11 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-5 text-center text-sm font-semibold text-text-primary">
-          Filter by severity
+        <button
+          className="inline-flex h-11 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-5 text-center text-sm font-semibold text-text-primary"
+          onClick={() => setSeverityFilter((current) => (current === "all" ? "high" : "all"))}
+          type="button"
+        >
+          {severityFilter === "all" ? "Filter high severity" : "Show all cards"}
         </button>
       </div>
 
+      {workflow.mapCardsReady && (
+        <Panel>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase text-accent-cyan">MAP generation complete</p>
+              <h3 className="mt-2 text-xl font-semibold text-text-primary">
+                Cards generated from validated obligation JSON
+              </h3>
+              <p className="mt-2 text-sm text-text-secondary">
+                The next workflow step is task acknowledgement, evidence collection, and audit tracking.
+              </p>
+            </div>
+            <button
+              className="inline-flex h-11 items-center justify-center rounded-md bg-accent-cyan px-5 text-sm font-semibold text-background"
+              onClick={() => navigate("/app/evidence")}
+              type="button"
+            >
+              Continue to evidence
+            </button>
+          </div>
+        </Panel>
+      )}
+
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
         <div className="space-y-4">
-          {mapCards.map((card) => (
-            <MAPCard key={card.id} card={card} />
+          {visibleCards.map((card) => (
+            <MAPCard
+              key={card.id}
+              card={card}
+              acknowledged={acknowledgedCards.includes(card.id)}
+              onAcknowledge={(cardId) =>
+                setAcknowledgedCards((current) =>
+                  current.includes(cardId) ? current : [...current, cardId],
+                )
+              }
+              onRequestEvidence={() => navigate("/app/evidence")}
+              onAuditChain={() => navigate("/app/audit")}
+            />
           ))}
         </div>
 

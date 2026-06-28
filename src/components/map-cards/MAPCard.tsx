@@ -1,7 +1,21 @@
 import type { MAPCard as MAPCardType } from "../../types/orbital";
 import { DepartmentChip, RegulatorBadge, RiskBadge, StatusPill } from "../ui/badges";
 
-export function MAPCard({ card }: { card: MAPCardType }) {
+type MAPCardProps = {
+  card: MAPCardType;
+  acknowledged?: boolean;
+  onAcknowledge?: (cardId: string) => void;
+  onRequestEvidence?: (cardId: string) => void;
+  onAuditChain?: (cardId: string) => void;
+};
+
+export function MAPCard({
+  card,
+  acknowledged,
+  onAcknowledge,
+  onRequestEvidence,
+  onAuditChain,
+}: MAPCardProps) {
   return (
     <article className="rounded-lg border border-border-default bg-surface-base p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -67,13 +81,25 @@ export function MAPCard({ card }: { card: MAPCardType }) {
       </div>
 
       <div className="mt-5 flex flex-wrap justify-center gap-3">
-        <button className="inline-flex min-w-36 items-center justify-center rounded-md bg-accent-cyan px-4 py-2 text-center text-sm font-semibold text-background">
-          Acknowledge task
+        <button
+          className="inline-flex min-w-36 items-center justify-center rounded-md bg-accent-cyan px-4 py-2 text-center text-sm font-semibold text-background"
+          onClick={() => onAcknowledge?.(card.id)}
+          type="button"
+        >
+          {acknowledged ? "Acknowledged" : "Acknowledge task"}
         </button>
-        <button className="inline-flex min-w-36 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 py-2 text-center text-sm font-semibold text-text-primary">
+        <button
+          className="inline-flex min-w-36 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 py-2 text-center text-sm font-semibold text-text-primary"
+          onClick={() => onRequestEvidence?.(card.id)}
+          type="button"
+        >
           Request evidence
         </button>
-        <button className="inline-flex min-w-36 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 py-2 text-center text-sm font-semibold text-text-primary">
+        <button
+          className="inline-flex min-w-36 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 py-2 text-center text-sm font-semibold text-text-primary"
+          onClick={() => onAuditChain?.(card.id)}
+          type="button"
+        >
           Audit chain
         </button>
       </div>

@@ -24,6 +24,7 @@ import { MetricCard } from "../components/ui/MetricCard";
 import { Panel, PanelHeader } from "../components/ui/panel";
 import { RegulatorBadge, RiskBadge, StatusPill } from "../components/ui/badges";
 import { OrbitalIntelligenceGraph } from "../components/three/OrbitalIntelligenceGraph";
+import { Leaderboard } from "../components/dashboard/Leaderboard";
 
 const chartColors = {
   primary: "#412D15",
@@ -49,7 +50,7 @@ export function CommandCenterPage() {
         <Panel className="overflow-hidden p-0">
           <div className="grid min-h-80 gap-0 2xl:grid-cols-[1fr_0.85fr]">
             <div className="p-6">
-              <p className="mb-3 text-xs font-semibold uppercase text-accent-cyan">Command Center</p>
+              <p className="mb-3 text-xs font-semibold uppercase text-accent-cyan">Supervisor Dashboard</p>
               <h2 className="text-3xl font-semibold leading-tight text-text-primary">
                 Track every regulatory obligation from source clause to evidence closure.
               </h2>
@@ -203,6 +204,8 @@ export function CommandCenterPage() {
           </div>
         </Panel>
       </div>
+
+      <Leaderboard />
     </div>
   );
 }
