@@ -1,0 +1,15 @@
+docling
+fastapi
+pymupdf
+pydantic
+instructor
+rapidfuzz
+networkx
+sqlite-utils
+pytest
+paddleocr
+pytesseract
+Pillow
+python-dotenv
+python-multipart
+uvicorn
