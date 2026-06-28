@@ -32,6 +32,31 @@ export function UploadPage() {
         onVerifySource={workflow.verifySource}
       />
 
+      {workflow.regulatorFindings.length > 0 && (
+        <Panel>
+          <PanelHeader
+            title="Regulator monitor findings"
+            eyebrow={`${workflow.regulatorFindings.filter((item) => item.status !== "seen").length} new or changed`}
+          />
+          <div className="grid gap-3 lg:grid-cols-2">
+            {workflow.regulatorFindings.slice(0, 6).map((finding) => (
+              <div key={finding.url} className="rounded-md border border-border-default bg-surface-strong p-4">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="rounded-md border border-border-default bg-bg-secondary px-2 py-1 text-[10px] font-semibold uppercase text-text-muted">
+                    {finding.regulator}
+                  </span>
+                  <span className="rounded-md border border-accent-cyan/25 bg-accent-cyan/10 px-2 py-1 text-[10px] font-semibold uppercase text-accent-cyan">
+                    {finding.status}
+                  </span>
+                </div>
+                <p className="line-clamp-2 text-sm font-semibold text-text-primary">{finding.title}</p>
+                <p className="mt-2 break-all text-xs text-text-muted">{finding.url}</p>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
+
       {workflow.apiError && (
         <Panel>
           <div className="flex gap-3 rounded-md border border-accent-warning/25 bg-accent-warning/10 p-4 text-sm text-text-secondary">

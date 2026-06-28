@@ -111,7 +111,7 @@ export function CommandCenterPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
         <Panel>
-          <PanelHeader title="Obligation Throughput" eyebrow="Extraction to closure" />
+          <PanelHeader title="Obligation Throughput" eyebrow={workflow.dataset === "live" ? "Portfolio simulation" : "Extraction to closure"} />
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={throughputTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -138,7 +138,7 @@ export function CommandCenterPage() {
         </Panel>
 
         <Panel>
-          <PanelHeader title="Regulator Distribution" eyebrow="Workload source" />
+          <PanelHeader title="Regulator Distribution" eyebrow={workflow.dataset === "live" ? "Portfolio simulation" : "Workload source"} />
           <div className="grid gap-4 md:grid-cols-[1fr_0.8fr] xl:grid-cols-1 2xl:grid-cols-[1fr_0.8fr]">
             <div className="h-60">
               <ResponsiveContainer width="100%" height="100%">
@@ -169,7 +169,7 @@ export function CommandCenterPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)]">
         <Panel>
-          <PanelHeader title="Department Workload" eyebrow="Closed, open, overdue" />
+          <PanelHeader title="Department Workload" eyebrow={workflow.dataset === "live" ? "Portfolio simulation" : "Closed, open, overdue"} />
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={departmentPerformance} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>

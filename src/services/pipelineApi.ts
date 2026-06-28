@@ -163,6 +163,24 @@ export type AuditEventsResponse = {
 
 export type EvidenceValidationResponse = Evidence;
 
+export type RegulatorFinding = {
+  regulator: string;
+  title: string;
+  url: string;
+  sourceUrl: string;
+  checksum: string;
+  status: "new" | "changed" | "seen";
+};
+
+export type RegulatorCheckResponse = {
+  checkedAt: string;
+  sourcesChecked: number;
+  newCount: number;
+  changedCount: number;
+  findings: RegulatorFinding[];
+  errors: Array<{ regulator: string; url: string; error: string }>;
+};
+
 export const intakeStages: PipelineStage[] = [
   {
     id: "upload",
@@ -224,6 +242,18 @@ export async function waitForMockStage(duration = 420) {
 
 export async function checkApiHealth() {
   return request<{ status: string }>("/api/health");
+}
+
+export async function checkRegulators(sourceUrl = "") {
+  const formData = new FormData();
+  if (sourceUrl.trim()) {
+    formData.append("source_url", sourceUrl.trim());
+  }
+
+  return request<RegulatorCheckResponse>("/api/regulators/check", {
+    method: "POST",
+    body: formData,
+  });
 }
 
 export async function uploadCircular(file: File, options: UploadCircularOptions = {}) {

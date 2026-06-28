@@ -20,6 +20,23 @@ export function EvidencePortalPage() {
     }
   };
 
+  if (!selectedMap) {
+    return (
+      <PageContainer>
+        <PageHeader eyebrow="Evidence Portal" title="Generate MAP cards before uploading evidence">
+          Evidence validation is tied to a specific measurable action card. Run circular intake, validate
+          obligations, and create MAP cards before submitting proof.
+        </PageHeader>
+        <Panel>
+          <PanelHeader title="No MAP card selected" eyebrow="Evidence blocked" />
+          <div className="rounded-md border border-border-default bg-surface-strong p-5 text-sm leading-6 text-text-secondary">
+            No generated MAP cards are available in the current workflow state.
+          </div>
+        </Panel>
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer>
       <PageHeader eyebrow="Evidence Portal" title="Validate proof against regulatory obligations">
@@ -62,7 +79,7 @@ export function EvidencePortalPage() {
 
         <Panel>
           <PanelHeader title="Required Evidence Checklist" eyebrow="Closure prerequisites" />
-          <EvidenceChecklist required={selectedMap.evidenceRequired} matched={selectedEvidence.matchedRequirements} />
+          <EvidenceChecklist required={selectedMap.evidenceRequired} matched={selectedEvidence?.matchedRequirements ?? []} />
         </Panel>
       </div>
 

@@ -8,7 +8,9 @@ import {
   type DocumentSummary,
   type PipelineStage,
   type PipelineStageId,
+  type RegulatorFinding,
   type ValidationIssue,
+  checkRegulators,
   fetchAuditEvents,
   fetchGraph,
   fetchMapCards,
@@ -50,6 +52,8 @@ type PipelineWorkflowContextValue = {
   mapCards: MAPCard[];
   evidenceItems: Evidence[];
   auditEvents: AuditEvent[];
+  auditVerified: boolean;
+  regulatorFindings: RegulatorFinding[];
   graph: unknown;
   apiError: string;
   validationIssues: ValidationIssue[];
@@ -59,7 +63,7 @@ type PipelineWorkflowContextValue = {
   suggestion: string;
   selectFile: (file: File | string) => void;
   setSourceUrl: (value: string) => void;
-  verifySource: () => void;
+  verifySource: () => Promise<void>;
   startProcessing: () => Promise<void>;
   continueValidation: () => Promise<void>;
   setSuggestion: (value: string) => void;
@@ -87,6 +91,8 @@ export function PipelineWorkflowProvider({ children }: { children: React.ReactNo
   const [mapCards, setMapCards] = useState<MAPCard[]>(mockMapCards);
   const [evidenceItems, setEvidenceItems] = useState<Evidence[]>(mockEvidence);
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>(mockAuditEvents);
+  const [auditVerified, setAuditVerified] = useState(true);
+  const [regulatorFindings, setRegulatorFindings] = useState<RegulatorFinding[]>([]);
   const [graph, setGraph] = useState<unknown>(null);
   const [apiError, setApiError] = useState("");
   const [backendValidation, setBackendValidation] = useState<BackendValidation | null>(null);
@@ -106,11 +112,27 @@ export function PipelineWorkflowProvider({ children }: { children: React.ReactNo
     setStatus("file_selected");
   }, []);
 
-  const verifySource = useCallback(() => {
-    setSourceVerified(Boolean(sourceUrl.trim()));
-    if (sourceUrl.trim() && !selectedFileName) {
-      setSelectedFileName("Verified regulator source URL");
-      setStatus("file_selected");
+  const verifySource = useCallback(async () => {
+    const trimmedSource = sourceUrl.trim();
+    if (!trimmedSource) {
+      setSourceVerified(false);
+      setRegulatorFindings([]);
+      return;
+    }
+
+    try {
+      const result = await checkRegulators(trimmedSource);
+      setRegulatorFindings(result.findings);
+      setSourceVerified(result.errors.length === 0);
+      setApiError(result.errors[0]?.error ?? "");
+      if (!selectedFileName) {
+        setSelectedFileName("Verified regulator source URL");
+        setStatus("file_selected");
+      }
+    } catch (error) {
+      setSourceVerified(false);
+      setRegulatorFindings([]);
+      setApiError(error instanceof Error ? error.message : "Source verification failed.");
     }
   }, [selectedFileName, sourceUrl]);
 
@@ -128,6 +150,8 @@ export function PipelineWorkflowProvider({ children }: { children: React.ReactNo
     setValidationScore(0);
     setBackendValidation(null);
     setRawObligations([]);
+    setMapCards([]);
+    setEvidenceItems([]);
     setGraph(null);
     setApiError("");
     setSteps(markStage(resetStages(), "upload", "running"));
@@ -159,7 +183,7 @@ export function PipelineWorkflowProvider({ children }: { children: React.ReactNo
       setValidationIssues(toValidationIssues(obligationResponse.validation));
       setGraph(graphResponse);
       setSteps(resetStages().map((stage) => ({ ...stage, status: "completed", duration: "live" })));
-      await refreshAuditEvents(setAuditEvents);
+      await refreshAuditEvents(setAuditEvents, setAuditVerified);
       setStatus("intake_complete");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Pipeline processing failed.";
@@ -219,7 +243,7 @@ export function PipelineWorkflowProvider({ children }: { children: React.ReactNo
     try {
       const result = await uploadEvidence(mapCardId, file);
       setEvidenceItems((current) => [result, ...current.filter((item) => item.id !== result.id)]);
-      await refreshAuditEvents(setAuditEvents);
+      await refreshAuditEvents(setAuditEvents, setAuditVerified);
     } catch (error) {
       setApiError(error instanceof Error ? error.message : "Evidence validation failed.");
     }
@@ -241,6 +265,8 @@ export function PipelineWorkflowProvider({ children }: { children: React.ReactNo
       mapCards,
       evidenceItems,
       auditEvents,
+      auditVerified,
+      regulatorFindings,
       graph,
       apiError,
       validationIssues,
@@ -273,6 +299,8 @@ export function PipelineWorkflowProvider({ children }: { children: React.ReactNo
       mapCards,
       evidenceItems,
       auditEvents,
+      auditVerified,
+      regulatorFindings,
       graph,
       apiError,
       validationIssues,
@@ -338,13 +366,17 @@ async function pollPipelineJob(jobId: string, setSteps: React.Dispatch<React.Set
   throw new Error("Pipeline timed out while waiting for backend job completion.");
 }
 
-async function refreshAuditEvents(setAuditEvents: React.Dispatch<React.SetStateAction<AuditEvent[]>>) {
+async function refreshAuditEvents(
+  setAuditEvents: React.Dispatch<React.SetStateAction<AuditEvent[]>>,
+  setAuditVerified: React.Dispatch<React.SetStateAction<boolean>>,
+) {
   try {
     const response = await fetchAuditEvents();
     const events = response.events.map(toAuditEvent).filter(Boolean) as AuditEvent[];
     if (events.length) {
       setAuditEvents(events);
     }
+    setAuditVerified(response.verified);
   } catch {
     // Older backend builds do not expose audit events; keep the current demo chain.
   }
@@ -410,6 +442,15 @@ function toFrontendMapCard(item: BackendMapCard): MAPCard {
     evidenceRequired: cleanList(item.evidenceRequired, ["Compliance sign-off record"]),
     aiReasoning: item.aiReasoning,
     validationChecklist: cleanList(item.validationChecklist, item.evidenceValidationRules || ["Human reviewer must approve closure."]),
+    actionVerb: item.actionVerb,
+    measurableOutcome: item.measurableOutcome,
+    acceptanceCriteria: item.acceptanceCriteria,
+    evidenceValidationRules: item.evidenceValidationRules,
+    ownerDepartment: item.ownerDepartment,
+    reviewerDepartment: item.reviewerDepartment,
+    deadlineType: item.deadlineType,
+    escalationLevel: item.escalationLevel,
+    closurePolicy: item.closurePolicy,
   };
 }
 

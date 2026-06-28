@@ -17,11 +17,15 @@ import sys
 import traceback
 import uuid
 import hashlib
+import html as html_lib
 import re
+import sqlite3
 import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urljoin, urlparse
+from urllib.request import Request, urlopen
 
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,6 +41,25 @@ EVIDENCE_DIR = BASE_DIR / "evidence_uploads"
 DB_PATH = Path(os.environ.get("DB_PATH", BASE_DIR / "orbital.db"))
 ALLOWED_SUFFIXES = {".pdf", ".docx", ".pptx"}
 ALLOWED_EVIDENCE_SUFFIXES = {".pdf", ".docx", ".txt", ".md", ".csv", ".log", ".png", ".jpg", ".jpeg"}
+DOCUMENT_LINK_SUFFIXES = (".pdf", ".docx", ".pptx")
+NEGATIVE_EVIDENCE_TERMS = (
+    "not available",
+    "not enabled",
+    "not implemented",
+    "pending",
+    "missing",
+    "without approval",
+    "cannot confirm",
+    "no screenshot",
+    "not completed",
+)
+REGULATOR_SOURCES = [
+    {"regulator": "RBI", "url": "https://www.rbi.org.in/Scripts/BS_CircularIndexDisplay.aspx"},
+    {"regulator": "SEBI", "url": "https://www.sebi.gov.in/sebiweb/home/HomeAction.do?doListing=yes&sid=1&ssid=7&smid=0"},
+    {"regulator": "NPCI", "url": "https://www.npci.org.in/what-we-do/upi/circular"},
+    {"regulator": "CERT-In", "url": "https://www.cert-in.org.in/"},
+    {"regulator": "IRDAI", "url": "https://irdai.gov.in/document-detail"},
+]
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -55,11 +78,56 @@ app.add_middleware(
 JOBS: dict[str, dict[str, Any]] = {}
 AUDIT_EVENTS: list[dict[str, Any]] = []
 EVIDENCE_RESULTS: dict[str, list[dict[str, Any]]] = {}
+RUNTIME_DB_READY = False
+
+
+@app.on_event("startup")
+def load_persistent_runtime_state() -> None:
+    initialize_runtime_state()
 
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.post("/api/regulators/check")
+def check_regulators(source_url: str = Form(default="")) -> dict[str, Any]:
+    sources = [{"regulator": "Manual source", "url": source_url.strip()}] if source_url.strip() else REGULATOR_SOURCES
+    findings: list[dict[str, Any]] = []
+    errors: list[dict[str, str]] = []
+
+    for source in sources:
+        try:
+            links = discover_document_links(source["regulator"], source["url"])
+        except Exception as exc:
+            errors.append({"regulator": source["regulator"], "url": source["url"], "error": str(exc)})
+            continue
+
+        for link in links:
+            previous = get_seen_regulator_link(link["url"])
+            status = "new"
+            if previous:
+                status = "changed" if previous.get("checksum") != link["checksum"] else "seen"
+            save_regulator_link(link)
+            findings.append({**link, "status": status})
+
+        append_audit_event(
+            entity_type="System",
+            entity_id=source["regulator"],
+            action="Regulator source checked",
+            actor="ORBITAL Monitor",
+            details=f"{source['url']} yielded {len(links)} document link(s).",
+        )
+
+    return {
+        "checkedAt": datetime.utcnow().isoformat() + "Z",
+        "sourcesChecked": len(sources),
+        "newCount": sum(1 for item in findings if item["status"] == "new"),
+        "changedCount": sum(1 for item in findings if item["status"] == "changed"),
+        "findings": findings,
+        "errors": errors,
+    }
 
 
 @app.post("/api/documents/upload")
@@ -98,6 +166,7 @@ async def upload_document(
         "summary": None,
         "error": None,
     }
+    persist_job(JOBS[job_id])
     append_audit_event(
         entity_type="Circular",
         entity_id=job_id,
@@ -177,8 +246,8 @@ async def upload_evidence(map_id: str, file: UploadFile = File(...)) -> dict[str
 
     evidence_text = extract_evidence_text(evidence_path)
     requirements = card.get("validationChecklist") or card.get("evidenceRequired") or []
-    matched, missing = validate_evidence(requirements, evidence_text)
-    result_label = evidence_result_label(matched, missing)
+    matched, missing, contradicted, snippets = validate_evidence(requirements, evidence_text)
+    result_label = evidence_result_label(matched, missing, contradicted)
     result = {
         "id": evidence_id,
         "mapCardId": map_id,
@@ -188,10 +257,13 @@ async def upload_evidence(map_id: str, file: UploadFile = File(...)) -> dict[str
         "validationResult": result_label,
         "matchedRequirements": matched,
         "missingRequirements": missing,
-        "recommendation": evidence_recommendation(result_label, missing),
+        "contradictedRequirements": contradicted,
+        "sourceSnippets": snippets,
+        "recommendation": evidence_recommendation(result_label, missing, contradicted),
         "requiresHumanReview": True,
     }
     EVIDENCE_RESULTS.setdefault(map_id, []).append(result)
+    persist_evidence_result(map_id, result)
     append_audit_event(
         entity_type="Evidence",
         entity_id=evidence_id,
@@ -290,6 +362,7 @@ def require_complete_job(job_id: str) -> dict[str, Any]:
 def update_job(job_id: str, **updates: Any) -> None:
     JOBS[job_id].update(updates)
     JOBS[job_id]["updated_at"] = datetime.utcnow().isoformat() + "Z"
+    persist_job(JOBS[job_id])
 
 
 def get_job_artifact(job_id: str, key: str) -> Path:
@@ -428,18 +501,27 @@ def extract_evidence_text(path: Path) -> str:
     return path.read_bytes().decode("utf-8", errors="ignore")
 
 
-def validate_evidence(requirements: list[str], evidence_text: str) -> tuple[list[str], list[str]]:
+def validate_evidence(requirements: list[str], evidence_text: str) -> tuple[list[str], list[str], list[str], list[dict[str, str]]]:
     text = evidence_text.lower()
     matched: list[str] = []
     missing: list[str] = []
+    contradicted: list[str] = []
+    snippets: list[dict[str, str]] = []
     for requirement in requirements:
         keywords = extract_keywords(requirement)
         hits = sum(1 for keyword in keywords if keyword in text)
         if keywords and hits >= max(1, min(3, len(keywords)) // 2):
-            matched.append(requirement)
+            snippet = find_evidence_snippet(evidence_text, keywords)
+            if has_contradiction(snippet):
+                contradicted.append(requirement)
+                status = "contradicted"
+            else:
+                matched.append(requirement)
+                status = "matched"
+            snippets.append({"requirement": requirement, "snippet": snippet, "status": status})
         else:
             missing.append(requirement)
-    return matched, missing
+    return matched, missing, contradicted, snippets
 
 
 def extract_keywords(value: str) -> list[str]:
@@ -451,7 +533,24 @@ def extract_keywords(value: str) -> list[str]:
     return [word for word in words if word not in stopwords][:8]
 
 
-def evidence_result_label(matched: list[str], missing: list[str]) -> str:
+def find_evidence_snippet(evidence_text: str, keywords: list[str]) -> str:
+    lowered = evidence_text.lower()
+    positions = [lowered.find(keyword) for keyword in keywords if lowered.find(keyword) >= 0]
+    if not positions:
+        return ""
+    start = max(0, min(positions) - 120)
+    end = min(len(evidence_text), min(positions) + 260)
+    return re.sub(r"\s+", " ", evidence_text[start:end]).strip()
+
+
+def has_contradiction(snippet: str) -> bool:
+    lowered = snippet.lower()
+    return any(term in lowered for term in NEGATIVE_EVIDENCE_TERMS)
+
+
+def evidence_result_label(matched: list[str], missing: list[str], contradicted: list[str]) -> str:
+    if contradicted:
+        return "Human Review Required"
     if matched and not missing:
         return "Pass"
     if matched and missing:
@@ -459,7 +558,9 @@ def evidence_result_label(matched: list[str], missing: list[str]) -> str:
     return "Human Review Required"
 
 
-def evidence_recommendation(result_label: str, missing: list[str]) -> str:
+def evidence_recommendation(result_label: str, missing: list[str], contradicted: list[str]) -> str:
+    if contradicted:
+        return f"Evidence contains possible contradiction language for {len(contradicted)} requirement(s). Human review is required."
     if result_label == "Pass":
         return "Evidence satisfies the automated checklist. Route to human reviewer for final closure."
     if result_label == "Partial":
@@ -493,6 +594,7 @@ def append_audit_event(
         "severity": severity,
     }
     AUDIT_EVENTS.append(event)
+    persist_audit_event(event)
     return event
 
 
@@ -510,6 +612,206 @@ def verify_audit_chain() -> bool:
             return False
         previous_hash = expected
     return True
+
+
+def initialize_runtime_state() -> None:
+    ensure_runtime_db()
+    JOBS.clear()
+    AUDIT_EVENTS.clear()
+    EVIDENCE_RESULTS.clear()
+
+    with connect_runtime_db() as conn:
+        for row in conn.execute("SELECT payload FROM runtime_jobs"):
+            job = json.loads(row["payload"])
+            if job.get("job_id"):
+                JOBS[job["job_id"]] = job
+
+        for row in conn.execute("SELECT payload FROM runtime_audit_events ORDER BY sequence ASC"):
+            AUDIT_EVENTS.append(json.loads(row["payload"]))
+
+        for row in conn.execute("SELECT map_id, payload FROM runtime_evidence_results ORDER BY uploaded_at DESC"):
+            EVIDENCE_RESULTS.setdefault(row["map_id"], []).append(json.loads(row["payload"]))
+
+
+def connect_runtime_db() -> sqlite3.Connection:
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def ensure_runtime_db() -> None:
+    global RUNTIME_DB_READY
+    if RUNTIME_DB_READY:
+        return
+
+    with connect_runtime_db() as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS runtime_jobs (
+                job_id TEXT PRIMARY KEY,
+                payload TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS runtime_audit_events (
+                id TEXT PRIMARY KEY,
+                sequence INTEGER NOT NULL,
+                payload TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS runtime_evidence_results (
+                id TEXT PRIMARY KEY,
+                map_id TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                uploaded_at TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS regulator_links (
+                url TEXT PRIMARY KEY,
+                regulator TEXT NOT NULL,
+                title TEXT,
+                checksum TEXT NOT NULL,
+                source_url TEXT NOT NULL,
+                first_seen TEXT NOT NULL,
+                last_seen TEXT NOT NULL
+            )
+            """
+        )
+    RUNTIME_DB_READY = True
+
+
+def persist_job(job: dict[str, Any]) -> None:
+    ensure_runtime_db()
+    with connect_runtime_db() as conn:
+        conn.execute(
+            """
+            INSERT INTO runtime_jobs (job_id, payload, updated_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(job_id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at
+            """,
+            (job["job_id"], json.dumps(job, default=str), job.get("updated_at") or datetime.utcnow().isoformat() + "Z"),
+        )
+
+
+def persist_audit_event(event: dict[str, Any]) -> None:
+    ensure_runtime_db()
+    sequence = len(AUDIT_EVENTS)
+    with connect_runtime_db() as conn:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO runtime_audit_events (id, sequence, payload, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (event["id"], sequence, json.dumps(event, default=str), event["timestamp"]),
+        )
+
+
+def persist_evidence_result(map_id: str, result: dict[str, Any]) -> None:
+    ensure_runtime_db()
+    with connect_runtime_db() as conn:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO runtime_evidence_results (id, map_id, payload, uploaded_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (result["id"], map_id, json.dumps(result, default=str), result["uploadedAt"]),
+        )
+
+
+def get_seen_regulator_link(url: str) -> dict[str, Any] | None:
+    ensure_runtime_db()
+    with connect_runtime_db() as conn:
+        row = conn.execute("SELECT * FROM regulator_links WHERE url = ?", (url,)).fetchone()
+    return dict(row) if row else None
+
+
+def save_regulator_link(link: dict[str, Any]) -> None:
+    ensure_runtime_db()
+    now = datetime.utcnow().isoformat() + "Z"
+    previous = get_seen_regulator_link(link["url"])
+    first_seen = previous["first_seen"] if previous else now
+    with connect_runtime_db() as conn:
+        conn.execute(
+            """
+            INSERT INTO regulator_links (url, regulator, title, checksum, source_url, first_seen, last_seen)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(url) DO UPDATE SET
+                regulator = excluded.regulator,
+                title = excluded.title,
+                checksum = excluded.checksum,
+                source_url = excluded.source_url,
+                last_seen = excluded.last_seen
+            """,
+            (
+                link["url"],
+                link["regulator"],
+                link.get("title", ""),
+                link["checksum"],
+                link["sourceUrl"],
+                first_seen,
+                now,
+            ),
+        )
+
+
+def discover_document_links(regulator: str, source_url: str) -> list[dict[str, Any]]:
+    html = fetch_text(source_url)
+    hrefs = re.findall(r'href=["\']([^"\']+)["\']', html, flags=re.IGNORECASE)
+    titles = extract_link_titles(html)
+    links: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    for href in hrefs:
+        absolute_url = urljoin(source_url, html_lib.unescape(href.strip()))
+        parsed_path = urlparse(absolute_url).path.lower()
+        if not parsed_path.endswith(DOCUMENT_LINK_SUFFIXES):
+            continue
+        if absolute_url in seen:
+            continue
+        seen.add(absolute_url)
+        title = titles.get(href) or Path(urlparse(absolute_url).path).name or absolute_url
+        checksum = hashlib.sha256(absolute_url.encode("utf-8")).hexdigest()
+        links.append(
+            {
+                "regulator": regulator,
+                "title": html_lib.unescape(re.sub(r"\s+", " ", title)).strip(),
+                "url": absolute_url,
+                "sourceUrl": source_url,
+                "checksum": checksum,
+            }
+        )
+
+    return links[:50]
+
+
+def fetch_text(url: str) -> str:
+    request = Request(url, headers={"User-Agent": "ORBITAL-Regulatory-Monitor/0.1"})
+    with urlopen(request, timeout=15) as response:
+        content_type = response.headers.get("content-type", "")
+        charset_match = re.search(r"charset=([\w-]+)", content_type)
+        charset = charset_match.group(1) if charset_match else "utf-8"
+        return response.read(2_000_000).decode(charset, errors="ignore")
+
+
+def extract_link_titles(html: str) -> dict[str, str]:
+    titles: dict[str, str] = {}
+    pattern = re.compile(r'<a\b[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', flags=re.IGNORECASE | re.DOTALL)
+    for href, body in pattern.findall(html):
+        text = re.sub(r"<[^>]+>", " ", body)
+        text = re.sub(r"\s+", " ", text).strip()
+        if text:
+            titles[href] = text
+    return titles
 
 
 @app.exception_handler(FileNotFoundError)
