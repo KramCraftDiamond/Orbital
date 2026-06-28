@@ -21,6 +21,7 @@ import {
   throughputTrend,
 } from "../data/mockData";
 import { MetricCard } from "../components/ui/MetricCard";
+import { PageContainer } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
 import { RegulatorBadge, RiskBadge, StatusPill } from "../components/ui/badges";
 import { OrbitalIntelligenceGraph } from "../components/three/OrbitalIntelligenceGraph";
@@ -45,8 +46,8 @@ export function CommandCenterPage() {
   const pendingEvidence = evidence.filter((item) => item.validationResult !== "Pass").length;
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+    <PageContainer>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
         <Panel className="overflow-hidden p-0">
           <div className="grid min-h-80 gap-0 2xl:grid-cols-[1fr_0.85fr]">
             <div className="p-6">
@@ -104,7 +105,7 @@ export function CommandCenterPage() {
         <MetricCard label="Closure Rate" value="87%" change={`${pendingEvidence + 18} evidence items pending`} tone="success" />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
         <Panel>
           <PanelHeader title="Obligation Throughput" eyebrow="Extraction to closure" />
           <div className="h-72">
@@ -162,7 +163,7 @@ export function CommandCenterPage() {
         </Panel>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.85fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)]">
         <Panel>
           <PanelHeader title="Department Workload" eyebrow="Closed, open, overdue" />
           <div className="h-72">
@@ -206,6 +207,6 @@ export function CommandCenterPage() {
       </div>
 
       <Leaderboard />
-    </div>
+    </PageContainer>
   );
 }

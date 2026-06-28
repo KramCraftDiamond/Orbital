@@ -1,6 +1,7 @@
 import { EvidenceChecklist } from "../components/evidence/EvidenceChecklist";
 import { EvidenceValidationPanel } from "../components/evidence/EvidenceValidationPanel";
 import { DepartmentChip, RiskBadge, StatusPill } from "../components/ui/badges";
+import { Button, PageContainer, PageHeader } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
 import { evidence, mapCards } from "../data/mockData";
 
@@ -9,17 +10,13 @@ export function EvidencePortalPage() {
   const selectedEvidence = evidence[0];
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
-      <div>
-        <p className="text-xs font-semibold uppercase text-accent-cyan">Evidence Portal</p>
-        <h2 className="mt-2 text-3xl font-semibold text-text-primary">Validate proof against regulatory obligations</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-text-secondary">
-          Departments upload evidence against MAP Cards. ORBITAL compares the proof against the original obligation,
-          identifies matched and missing requirements, then routes the result for human approval.
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader eyebrow="Evidence Portal" title="Validate proof against regulatory obligations">
+        Departments upload evidence against MAP Cards. ORBITAL compares the proof against the original obligation,
+        identifies matched and missing requirements, then routes the result for human approval.
+      </PageHeader>
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         <Panel>
           <PanelHeader title="Selected MAP Card" eyebrow={selectedMap.id} />
           <div className="mb-4 flex flex-wrap gap-2">
@@ -39,9 +36,9 @@ export function EvidencePortalPage() {
             <p className="mt-2 text-sm text-text-secondary">
               Add reports, policy updates, screenshots, logs, or sign-off records for this MAP Card.
             </p>
-            <button className="mt-5 inline-flex items-center justify-center rounded-md bg-accent-cyan px-5 py-2 text-center text-sm font-semibold text-background">
+            <Button variant="primary" className="mt-5" type="button">
               Select files
-            </button>
+            </Button>
           </div>
         </Panel>
 
@@ -51,7 +48,7 @@ export function EvidencePortalPage() {
         </Panel>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.85fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)]">
         <EvidenceValidationPanel evidence={selectedEvidence} />
         <Panel>
           <PanelHeader title="Uploaded Files" eyebrow="Department submission" />
@@ -70,15 +67,15 @@ export function EvidencePortalPage() {
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <button className="inline-flex h-11 items-center justify-center rounded-md bg-accent-success px-4 text-center text-sm font-semibold text-background">
+            <Button variant="success" type="button">
               Approve closure
-            </button>
-            <button className="inline-flex h-11 items-center justify-center rounded-md border border-accent-critical/35 bg-accent-critical/10 px-4 text-center text-sm font-semibold text-accent-critical">
+            </Button>
+            <Button variant="danger" type="button">
               Request revision
-            </button>
+            </Button>
           </div>
         </Panel>
       </div>
-    </div>
+    </PageContainer>
   );
 }

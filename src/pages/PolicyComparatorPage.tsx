@@ -1,21 +1,18 @@
 import { AlertTriangle, CheckCircle2, GitCompareArrows } from "lucide-react";
+import { PageContainer, PageHeader } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
 import { StatusPill } from "../components/ui/badges";
 import { obligations } from "../data/mockData";
 
 export function PolicyComparatorPage() {
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
-      <div>
-        <p className="text-xs font-semibold uppercase text-accent-cyan">Policy Comparator</p>
-        <h2 className="mt-2 text-3xl font-semibold text-text-primary">RAG-backed gap and conflict analysis</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-text-secondary">
-          Compare extracted obligations against internal policies, SOPs, and prior circulars to detect coverage gaps,
-          outdated policy sections, and implementation conflicts.
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader eyebrow="Policy Comparator" title="RAG-backed gap and conflict analysis">
+        Compare extracted obligations against internal policies, SOPs, and prior circulars to detect coverage gaps,
+        outdated policy sections, and implementation conflicts.
+      </PageHeader>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.9fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(340px,0.9fr)]">
         <Panel>
           <PanelHeader title="Comparison Matrix" eyebrow="New circular vs internal policy" />
           <div className="space-y-3">
@@ -55,6 +52,6 @@ export function PolicyComparatorPage() {
           </div>
         </Panel>
       </div>
-    </div>
+    </PageContainer>
   );
 }

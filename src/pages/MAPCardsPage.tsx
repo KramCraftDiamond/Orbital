@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { MAPCard } from "../components/map-cards/MAPCard";
+import { Button, PageContainer, PageHeader } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
 import { mapCards } from "../data/mockData";
 import { usePipelineWorkflow } from "../state/PipelineWorkflowContext";
@@ -16,24 +17,23 @@ export function MAPCardsPage() {
       : mapCards;
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase text-accent-cyan">MAP Card Task Feed</p>
-          <h2 className="mt-2 text-3xl font-semibold text-text-primary">Generated compliance execution cards</h2>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-text-secondary">
-            MAP Cards convert extracted obligations into accountable department tasks with owners,
-            deadlines, evidence requirements, AI reasoning, validation checklists, and audit links.
-          </p>
-        </div>
-        <button
-          className="inline-flex h-11 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-5 text-center text-sm font-semibold text-text-primary"
-          onClick={() => setSeverityFilter((current) => (current === "all" ? "high" : "all"))}
-          type="button"
-        >
-          {severityFilter === "all" ? "Filter high severity" : "Show all cards"}
-        </button>
-      </div>
+    <PageContainer>
+      <PageHeader
+        eyebrow="MAP Card Task Feed"
+        title="Generated compliance execution cards"
+        action={
+          <Button
+            variant="secondary"
+            onClick={() => setSeverityFilter((current) => (current === "all" ? "high" : "all"))}
+            type="button"
+          >
+            {severityFilter === "all" ? "Filter high severity" : "Show all cards"}
+          </Button>
+        }
+      >
+        MAP Cards convert extracted obligations into accountable department tasks with owners,
+        deadlines, evidence requirements, AI reasoning, validation checklists, and audit links.
+      </PageHeader>
 
       {workflow.mapCardsReady && (
         <Panel>
@@ -47,18 +47,18 @@ export function MAPCardsPage() {
                 The next workflow step is task acknowledgement, evidence collection, and audit tracking.
               </p>
             </div>
-            <button
-              className="inline-flex h-11 items-center justify-center rounded-md bg-accent-cyan px-5 text-sm font-semibold text-background"
+            <Button
+              variant="primary"
               onClick={() => navigate("/app/evidence")}
               type="button"
             >
               Continue to evidence
-            </button>
+            </Button>
           </div>
         </Panel>
       )}
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-4">
           {visibleCards.map((card) => (
             <MAPCard
@@ -76,7 +76,7 @@ export function MAPCardsPage() {
           ))}
         </div>
 
-        <aside className="space-y-6">
+        <aside className="space-y-6 xl:sticky xl:top-24 xl:self-start">
           <Panel>
             <PanelHeader title="Deadline Risk" eyebrow="Operational exposure" />
             <div className="space-y-3">
@@ -109,6 +109,6 @@ export function MAPCardsPage() {
           </Panel>
         </aside>
       </div>
-    </div>
+    </PageContainer>
   );
 }

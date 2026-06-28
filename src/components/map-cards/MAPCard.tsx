@@ -1,5 +1,6 @@
 import type { MAPCard as MAPCardType } from "../../types/orbital";
 import { DepartmentChip, RegulatorBadge, RiskBadge, StatusPill } from "../ui/badges";
+import { Button } from "../ui/layout";
 
 type MAPCardProps = {
   card: MAPCardType;
@@ -80,28 +81,31 @@ export function MAPCard({
         <p className="mt-2 text-sm leading-6 text-text-secondary">{card.aiReasoning}</p>
       </div>
 
-      <div className="mt-5 flex flex-wrap justify-center gap-3">
-        <button
-          className="inline-flex min-w-36 items-center justify-center rounded-md bg-accent-cyan px-4 py-2 text-center text-sm font-semibold text-background"
+      <div className="mt-5 flex flex-wrap gap-3">
+        <Button
+          variant="primary"
+          className="min-w-32"
           onClick={() => onAcknowledge?.(card.id)}
           type="button"
         >
           {acknowledged ? "Acknowledged" : "Acknowledge task"}
-        </button>
-        <button
-          className="inline-flex min-w-36 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 py-2 text-center text-sm font-semibold text-text-primary"
+        </Button>
+        <Button
+          variant="secondary"
+          className="min-w-32"
           onClick={() => onRequestEvidence?.(card.id)}
           type="button"
         >
           Request evidence
-        </button>
-        <button
-          className="inline-flex min-w-36 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 py-2 text-center text-sm font-semibold text-text-primary"
+        </Button>
+        <Button
+          variant="secondary"
+          className="min-w-32"
           onClick={() => onAuditChain?.(card.id)}
           type="button"
         >
           Audit chain
-        </button>
+        </Button>
       </div>
     </article>
   );

@@ -1,7 +1,8 @@
-import { CheckCircle2, TriangleAlert } from "lucide-react";
+import { CheckCircle2, Copy, TriangleAlert } from "lucide-react";
 import { StatusPill } from "../ui/badges";
+import { Button } from "../ui/layout";
 
-export function JsonViewer({ value }: { value: unknown }) {
+export function JsonViewer({ value, maxHeight = "520px" }: { value: unknown; maxHeight?: string }) {
   const formatted = JSON.stringify(value, null, 2);
 
   return (
@@ -16,13 +17,19 @@ export function JsonViewer({ value }: { value: unknown }) {
         </div>
         <div className="flex items-center gap-2">
           <StatusPill status="valid" />
-          <button className="inline-flex items-center justify-center rounded-md border border-border-default px-4 py-2 text-center text-xs font-semibold text-text-secondary">
+          <Button
+            variant="ghost"
+            className="h-9 gap-2 px-3 text-xs"
+            onClick={() => navigator.clipboard?.writeText(formatted)}
+            type="button"
+          >
+            <Copy className="h-3.5 w-3.5" />
             Copy JSON
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="grid border-b border-border-default bg-bg-secondary px-4 py-3 text-xs text-text-secondary md:grid-cols-3">
+      <div className="grid gap-2 border-b border-border-default bg-bg-secondary px-4 py-3 text-xs text-text-secondary md:grid-cols-3">
         <span className="flex items-center gap-2">
           <CheckCircle2 className="h-3.5 w-3.5 text-accent-success" />
           Required fields present
@@ -37,7 +44,7 @@ export function JsonViewer({ value }: { value: unknown }) {
         </span>
       </div>
 
-      <pre className="max-h-[640px] overflow-auto p-5 font-mono text-xs leading-6 text-[#E1DCC9]">
+      <pre className="overflow-auto p-5 font-mono text-xs leading-6 text-[#E1DCC9]" style={{ maxHeight }}>
         {formatted}
       </pre>
     </div>

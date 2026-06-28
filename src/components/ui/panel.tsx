@@ -11,7 +11,7 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-lg border border-border-default bg-surface-base p-5 shadow-[0_18px_48px_rgba(65,45,21,0.10)] backdrop-blur",
+        "rounded-lg border border-border-default bg-surface-base p-5 shadow-[0_14px_36px_rgba(65,45,21,0.08)] backdrop-blur",
         className,
       )}
     >
@@ -31,13 +31,13 @@ export function PanelHeader({
 }) {
   return (
     <div className="mb-5 flex items-start justify-between gap-4">
-      <div>
+      <div className="min-w-0">
         {eyebrow && (
           <p className="mb-1 text-[10px] font-semibold uppercase text-text-muted">{eyebrow}</p>
         )}
-        <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
+        <h2 className="text-lg font-semibold leading-tight text-text-primary">{title}</h2>
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }

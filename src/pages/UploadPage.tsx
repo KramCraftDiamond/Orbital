@@ -4,6 +4,7 @@ import { CircularMetadataCard } from "../components/upload/CircularMetadataCard"
 import { ProcessingPipeline } from "../components/upload/ProcessingPipeline";
 import { UploadDropzone } from "../components/upload/UploadDropzone";
 import { Panel, PanelHeader } from "../components/ui/panel";
+import { Button, PageContainer, PageHeader } from "../components/ui/layout";
 import { circulars, regulators } from "../data/mockData";
 import { usePipelineWorkflow } from "../state/PipelineWorkflowContext";
 
@@ -15,15 +16,11 @@ export function UploadPage() {
   const intakeComplete = workflow.status === "intake_complete";
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
-      <div>
-        <p className="text-xs font-semibold uppercase text-accent-cyan">Circular Intake</p>
-        <h2 className="mt-2 text-3xl font-semibold text-text-primary">Upload and process regulatory circulars</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-text-secondary">
-          Ingest PDFs, regulator URLs, and scanned notifications. ORBITAL extracts metadata,
-          parses clauses, generates obligation JSON, validates schema, and creates MAP cards.
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader eyebrow="Circular Intake" title="Upload and process regulatory circulars">
+        Ingest PDFs, regulator URLs, and scanned notifications. ORBITAL extracts metadata,
+        parses clauses, generates obligation JSON, validates schema, and creates MAP cards.
+      </PageHeader>
 
       <UploadDropzone
         selectedFileName={workflow.selectedFileName}
@@ -34,7 +31,7 @@ export function UploadPage() {
         onVerifySource={workflow.verifySource}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.2fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.2fr)]">
         <Panel>
           <PanelHeader title="Document controls" eyebrow="Input metadata" />
           <div className="space-y-4">
@@ -95,7 +92,7 @@ export function UploadPage() {
         </Panel>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.8fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]">
         {intakeComplete ? (
           <CircularMetadataCard circular={circular} />
         ) : (
@@ -133,16 +130,16 @@ export function UploadPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button
-              className="inline-flex h-11 items-center justify-center rounded-md bg-accent-cyan px-5 text-center text-sm font-semibold text-background disabled:cursor-not-allowed disabled:opacity-55"
+            <Button
+              variant="primary"
               onClick={workflow.startProcessing}
               disabled={isProcessing}
               type="button"
             >
               {isProcessing ? "Processing..." : "Start processing"}
-            </button>
-            <button
-              className="inline-flex h-11 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-5 text-center text-sm font-semibold text-text-primary disabled:cursor-not-allowed disabled:opacity-55"
+            </Button>
+            <Button
+              variant="secondary"
               onClick={async () => {
                 await workflow.continueValidation();
                 navigate("/app/obligations");
@@ -151,11 +148,11 @@ export function UploadPage() {
               type="button"
             >
               Continue validation
-            </button>
+            </Button>
           </div>
         </div>
       </Panel>
-    </div>
+    </PageContainer>
   );
 }
 

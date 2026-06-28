@@ -13,9 +13,14 @@ const navItems = [
   { path: "/app/settings", label: "Settings", sublabel: "Model controls" },
 ];
 
-export function Sidebar() {
+export function Sidebar({ mobile = false, onNavigate }: { mobile?: boolean; onNavigate?: () => void }) {
   return (
-    <aside className="relative z-10 hidden h-screen w-72 shrink-0 border-r border-border-strong bg-[#F8F3E2]/92 text-text-primary shadow-[18px_0_50px_rgba(65,45,21,0.10)] backdrop-blur-xl lg:flex lg:flex-col">
+    <aside
+      className={cn(
+        "relative z-10 h-screen w-72 shrink-0 border-r border-border-strong bg-[#F8F3E2]/92 text-text-primary shadow-[18px_0_50px_rgba(65,45,21,0.10)] backdrop-blur-xl",
+        mobile ? "flex flex-col" : "hidden lg:flex lg:flex-col",
+      )}
+    >
       <div className="shrink-0 border-b border-border-default px-5 py-6">
         <div className="text-center">
           <p className="font-display text-base font-bold uppercase tracking-[0.12em] text-text-primary">ORBITAL</p>
@@ -30,6 +35,7 @@ export function Sidebar() {
               key={item.path}
               to={item.path}
               end={item.end}
+              onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
                   "group flex min-h-16 items-center justify-center rounded-lg border px-4 py-3 text-center transition-colors",

@@ -1,5 +1,6 @@
 import { Fingerprint, LockKeyhole, ShieldCheck } from "lucide-react";
 import { AuditTimeline } from "../components/audit/AuditTimeline";
+import { PageContainer, PageHeader } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
 import { auditEvents } from "../data/mockData";
 
@@ -7,20 +8,16 @@ export function AuditTrailPage() {
   const latest = auditEvents[auditEvents.length - 1];
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
-      <div>
-        <p className="text-xs font-semibold uppercase text-accent-cyan">Immutable Audit Trail</p>
-        <h2 className="mt-2 text-3xl font-semibold text-text-primary">Defensible compliance event chain</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-text-secondary">
-          Every circular, extracted obligation, MAP Card assignment, evidence submission, AI validation,
-          and human decision is recorded with timestamps, actors, event IDs, and chained hashes.
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader eyebrow="Immutable Audit Trail" title="Defensible compliance event chain">
+        Every circular, extracted obligation, MAP Card assignment, evidence submission, AI validation,
+        and human decision is recorded with timestamps, actors, event IDs, and chained hashes.
+      </PageHeader>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <AuditTimeline events={auditEvents} />
 
-        <aside className="space-y-6">
+        <aside className="space-y-6 xl:sticky xl:top-24 xl:self-start">
           <Panel>
             <PanelHeader title="Hash Integrity" eyebrow="Current chain status" />
             <div className="space-y-4">
@@ -54,7 +51,7 @@ export function AuditTrailPage() {
           </Panel>
         </aside>
       </div>
-    </div>
+    </PageContainer>
   );
 }
 

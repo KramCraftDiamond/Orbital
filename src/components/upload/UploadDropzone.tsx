@@ -1,3 +1,5 @@
+import { Button } from "../ui/layout";
+
 type UploadDropzoneProps = {
   selectedFileName: string;
   sourceUrl: string;
@@ -30,13 +32,14 @@ export function UploadDropzone({
             <span className="rounded-md border border-border-default px-2.5 py-1">Regulator URL</span>
           </div>
         </div>
-        <button
-          className="inline-flex items-center justify-center rounded-md bg-accent-cyan px-5 py-3 text-center text-sm font-semibold text-background"
+        <Button
+          variant="primary"
+          className="h-12 px-5"
           onClick={() => onSelectFile("Sample RBI circular.pdf")}
           type="button"
         >
           Select circular
-        </button>
+        </Button>
       </div>
 
       {selectedFileName && (
@@ -54,13 +57,13 @@ export function UploadDropzone({
             placeholder="Paste RBI, NPCI, CERT-In, SEBI, or IRDAI source URL"
           />
         </label>
-        <button
-          className="inline-flex h-11 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-5 text-center text-sm font-semibold text-text-primary"
+        <Button
+          variant="secondary"
           onClick={onVerifySource}
           type="button"
         >
           {sourceVerified ? "Source verified" : "Verify source"}
-        </button>
+        </Button>
       </div>
     </div>
   );
