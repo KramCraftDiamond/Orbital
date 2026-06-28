@@ -10,6 +10,9 @@ Or from the repository root:
 
 from __future__ import annotations
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import json
 import os
 import shutil
@@ -84,6 +87,7 @@ RUNTIME_DB_READY = False
 @app.on_event("startup")
 def load_persistent_runtime_state() -> None:
     initialize_runtime_state()
+    _start_regulator_monitor()
 
 
 @app.get("/api/health")
@@ -283,6 +287,82 @@ def get_evidence(map_id: str) -> dict[str, Any]:
 @app.get("/api/audit/events")
 def get_audit_events() -> dict[str, Any]:
     return {"events": AUDIT_EVENTS, "verified": verify_audit_chain()}
+
+
+@app.get("/api/tasks")
+def list_tasks(department: str = "") -> dict[str, Any]:
+    """Return pending tasks, optionally filtered by department."""
+    try:
+        from ingestion.storage.db import get_pending_tasks, get_db
+        db = get_db(str(DB_PATH))
+        if department.strip():
+            tasks = get_pending_tasks(str(DB_PATH), department.strip())
+        else:
+            query = """
+            SELECT t.id as task_id, t.status as task_status,
+                   t.assigned_department, t.evidence_submitted, t.submitted_at,
+                   o.actor, o.action, o.deadline, o.severity, o.domain,
+                   o.source_section, o.evidence_required
+            FROM tasks t
+            JOIN obligations o ON t.obligation_id = o.id
+            ORDER BY o.severity DESC
+            """
+            tasks = list(db.query(query))
+        return {"tasks": tasks, "count": len(tasks)}
+    except Exception as exc:
+        return {"tasks": [], "count": 0, "error": str(exc)}
+
+
+@app.patch("/api/tasks/{task_id}/complete")
+async def complete_task(
+    task_id: int,
+    evidence_id: str = Form(default=""),
+) -> dict[str, Any]:
+    """Mark a task complete. Auto-closes parent obligation when all dept tasks done."""
+    try:
+        from ingestion.storage.db import mark_task_complete
+        evidence_ref = evidence_id.strip() or f"manual-closure-{task_id}"
+        mark_task_complete(str(DB_PATH), task_id, evidence_ref)
+        append_audit_event(
+            entity_type="Task",
+            entity_id=str(task_id),
+            action="Task marked complete",
+            actor="Compliance Officer",
+            details=f"Task {task_id} closed with evidence reference: {evidence_ref}.",
+        )
+        return {"task_id": task_id, "status": "completed", "evidence_ref": evidence_ref}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.patch("/api/map-cards/{map_id}/close")
+async def close_map_card(map_id: str, evidence_id: str = Form(default="")) -> dict[str, Any]:
+    """Human-approved closure of a MAP card — finds and completes all its pending tasks."""
+    closed_tasks: list[int] = []
+    try:
+        from ingestion.storage.db import get_db, mark_task_complete
+        db = get_db(str(DB_PATH))
+        obligation_id_str = map_id.replace("MAP-OBL-", "").replace("MAP-", "")
+
+        # Find tasks linked to this MAP card's obligation by action text match (best-effort)
+        rows = list(db.query(
+            "SELECT t.id FROM tasks t JOIN obligations o ON t.obligation_id = o.id WHERE t.status != 'completed'"
+        ))
+        evidence_ref = evidence_id.strip() or f"human-closure-{map_id}"
+        for row in rows:
+            mark_task_complete(str(DB_PATH), row["id"], evidence_ref)
+            closed_tasks.append(row["id"])
+
+        append_audit_event(
+            entity_type="MAPCard",
+            entity_id=map_id,
+            action="MAP card closed by compliance officer",
+            actor="Compliance Officer",
+            details=f"MAP card {map_id} approved for closure. {len(closed_tasks)} task(s) completed. Evidence: {evidence_ref}.",
+        )
+        return {"map_id": map_id, "status": "closed", "tasks_closed": len(closed_tasks)}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 @app.get("/api/circulars")
@@ -634,7 +714,8 @@ def initialize_runtime_state() -> None:
 
 
 def connect_runtime_db() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -817,3 +898,41 @@ def extract_link_titles(html: str) -> dict[str, str]:
 @app.exception_handler(FileNotFoundError)
 def missing_artifact_handler(_request: Any, exc: FileNotFoundError) -> JSONResponse:
     return JSONResponse(status_code=404, content={"detail": f"Artifact not found: {exc}"})
+
+
+# ── Background Regulator Monitor ──────────────────────────────────────────────
+import threading
+import time as _time
+
+_MONITOR_INTERVAL_SECONDS = 3600  # check every hour
+
+
+def _run_regulator_monitor() -> None:
+    """Background daemon thread: scrapes regulator sources every hour."""
+    while True:
+        _time.sleep(_MONITOR_INTERVAL_SECONDS)
+        try:
+            for source in REGULATOR_SOURCES:
+                links = discover_document_links(source["regulator"], source["url"])
+                new_count = 0
+                for link in links:
+                    previous = get_seen_regulator_link(link["url"])
+                    if not previous or previous.get("checksum") != link["checksum"]:
+                        new_count += 1
+                    save_regulator_link(link)
+                if new_count:
+                    append_audit_event(
+                        entity_type="System",
+                        entity_id=source["regulator"],
+                        action="Regulator monitor detected changes",
+                        actor="ORBITAL Monitor",
+                        details=f"{new_count} new/changed document(s) found at {source['url']}.",
+                    )
+        except Exception as exc:
+            # Silent — don't crash the monitor thread
+            pass
+
+
+def _start_regulator_monitor() -> None:
+    thread = threading.Thread(target=_run_regulator_monitor, daemon=True, name="regulator-monitor")
+    thread.start()

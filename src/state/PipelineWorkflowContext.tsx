@@ -339,7 +339,7 @@ async function pollPipelineJob(jobId: string, setSteps: React.Dispatch<React.Set
   ];
   let currentIndex = 0;
 
-  for (let attempt = 0; attempt < 120; attempt += 1) {
+  for (let attempt = 0; attempt < 400; attempt += 1) {
     const job = await fetchPipelineJob(jobId);
     if (job.status === "failed") {
       throw new Error(job.error || "Pipeline job failed.");
@@ -360,10 +360,10 @@ async function pollPipelineJob(jobId: string, setSteps: React.Dispatch<React.Set
     );
 
     currentIndex = Math.min(currentIndex + 1, processingStages.length - 1);
-    await waitForMockStage(1500);
+    await waitForMockStage(3000);
   }
 
-  throw new Error("Pipeline timed out while waiting for backend job completion.");
+  throw new Error("Pipeline timed out after 20 minutes. The document may be too large — try a smaller batch size or check the backend logs.");
 }
 
 async function refreshAuditEvents(

@@ -163,6 +163,26 @@ export type AuditEventsResponse = {
 
 export type EvidenceValidationResponse = Evidence;
 
+export type DepartmentTask = {
+  task_id: number;
+  task_status: string;
+  assigned_department: string;
+  evidence_submitted: string | null;
+  submitted_at: string | null;
+  actor: string;
+  action: string;
+  deadline: string | null;
+  severity: string;
+  domain: string;
+  source_section: string;
+  evidence_required: string;
+};
+
+export type DepartmentTasksResponse = {
+  tasks: DepartmentTask[];
+  count: number;
+};
+
 export type RegulatorFinding = {
   regulator: string;
   title: string;
@@ -302,6 +322,29 @@ export async function uploadEvidence(mapCardId: string, file: File) {
     method: "POST",
     body: formData,
   });
+}
+
+export async function fetchDepartmentTasks(department = "") {
+  const query = department ? `?department=${encodeURIComponent(department)}` : "";
+  return request<DepartmentTasksResponse>(`/api/tasks${query}`);
+}
+
+export async function completeTask(taskId: number, evidenceId = "") {
+  const formData = new FormData();
+  formData.append("evidence_id", evidenceId);
+  return request<{ task_id: number; status: string; evidence_ref: string }>(
+    `/api/tasks/${taskId}/complete`,
+    { method: "PATCH", body: formData },
+  );
+}
+
+export async function closeMapCard(mapId: string, evidenceId = "") {
+  const formData = new FormData();
+  formData.append("evidence_id", evidenceId);
+  return request<{ map_id: string; status: string; tasks_closed: number }>(
+    `/api/map-cards/${encodeURIComponent(mapId)}/close`,
+    { method: "PATCH", body: formData },
+  );
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
