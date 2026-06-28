@@ -16,18 +16,6 @@ export function TopBar() {
               placeholder="Search circular, MAP card, obligation, audit event"
             />
           </label>
-          <span className="inline-flex h-10 items-center justify-center rounded-md border border-accent-success/25 bg-accent-success/10 px-4 text-center text-xs font-semibold text-accent-success">
-            On-prem mode
-          </span>
-          <span className="inline-flex h-10 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 text-center text-xs text-text-secondary">
-            Audit chain locked
-          </span>
-          <button className="flex h-10 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 text-center text-xs font-semibold text-text-secondary">
-            Command
-          </button>
-          <button className="flex h-10 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-4 text-center text-xs font-semibold text-text-secondary">
-            Alerts
-          </button>
         </div>
       </div>
     </header>
