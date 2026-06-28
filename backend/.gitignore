@@ -1,0 +1,82 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+*.pyc
+
+# ── Virtual Environments ──────────────────────────────────────────────────────
+venv/
+env/
+.venv/
+.env_bak/
+ENV/
+
+# ── Distribution / Build ──────────────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+
+# ── Pytest & Coverage ─────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.coveragerc
+
+# ── Type Checkers ─────────────────────────────────────────────────────────────
+.mypy_cache/
+.pytype/
+.pyre/
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Secrets & Environment ─────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example         # allow a safe example file if you add one
+
+# ── Databases ─────────────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+reg_ingestion.db
+test_*.db
+
+# ── HuggingFace / Model Cache ─────────────────────────────────────────────────
+.cache/
+~/.cache/huggingface/
+models/
+
+# ── Docling / OCR artefacts ───────────────────────────────────────────────────
+*.pdf.json
+*.docx.json
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Output / Exports ──────────────────────────────────────────────────────────
+*.json
+
+# ── IDE & Editor ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store         # macOS
+Thumbs.db         # Windows
+
+# ── Windows ───────────────────────────────────────────────────────────────────
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
