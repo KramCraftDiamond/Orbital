@@ -5,6 +5,8 @@ import { StatusPill } from "../ui/badges";
 export function EvidenceValidationPanel({ evidence }: { evidence: Evidence }) {
   const isPass = evidence.validationResult === "Pass";
   const Icon = isPass ? CheckCircle2 : evidence.validationResult === "Fail" ? ShieldAlert : AlertTriangle;
+  const contradicted = evidence.contradictedRequirements ?? [];
+  const snippets = evidence.sourceSnippets ?? [];
 
   return (
     <div className="rounded-lg border border-border-default bg-surface-base p-5">
@@ -50,6 +52,34 @@ export function EvidenceValidationPanel({ evidence }: { evidence: Evidence }) {
           </ul>
         </div>
       </div>
+
+      {contradicted.length > 0 && (
+        <div className="mt-4 rounded-md border border-accent-warning/25 bg-accent-warning/5 p-4">
+          <p className="text-xs font-semibold uppercase text-accent-warning">Possible contradictions</p>
+          <ul className="mt-3 space-y-2 text-sm text-text-secondary">
+            {contradicted.map((item) => (
+              <li key={item} className="flex gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 text-accent-warning" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {snippets.length > 0 && (
+        <div className="mt-4 rounded-md border border-border-default bg-bg-secondary p-4">
+          <p className="text-xs font-semibold uppercase text-text-muted">Evidence snippets</p>
+          <div className="mt-3 space-y-3">
+            {snippets.map((item) => (
+              <div key={`${item.requirement}-${item.status}`} className="rounded-md border border-border-default bg-surface-strong p-3">
+                <p className="text-xs font-semibold uppercase text-text-muted">{item.status}</p>
+                <p className="mt-2 text-sm leading-6 text-text-secondary">{item.snippet}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

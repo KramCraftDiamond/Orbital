@@ -68,6 +68,15 @@ export interface MAPCard {
   evidenceRequired: string[];
   aiReasoning: string;
   validationChecklist: string[];
+  actionVerb?: string;
+  measurableOutcome?: string;
+  acceptanceCriteria?: string[];
+  evidenceValidationRules?: string[];
+  ownerDepartment?: string;
+  reviewerDepartment?: string;
+  deadlineType?: string;
+  escalationLevel?: string;
+  closurePolicy?: string;
 }
 
 export interface Evidence {
@@ -79,6 +88,12 @@ export interface Evidence {
   validationResult: "Pass" | "Partial" | "Fail" | "Human Review Required";
   matchedRequirements: string[];
   missingRequirements: string[];
+  contradictedRequirements?: string[];
+  sourceSnippets?: Array<{
+    requirement: string;
+    snippet: string;
+    status: "matched" | "contradicted";
+  }>;
   recommendation: string;
   requiresHumanReview: boolean;
 }

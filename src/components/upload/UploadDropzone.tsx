@@ -1,8 +1,11 @@
+import { useRef } from "react";
+import { Button } from "../ui/layout";
+
 type UploadDropzoneProps = {
   selectedFileName: string;
   sourceUrl: string;
   sourceVerified: boolean;
-  onSelectFile: (fileName: string) => void;
+  onSelectFile: (file: File) => void;
   onSourceUrlChange: (value: string) => void;
   onVerifySource: () => void;
 };
@@ -15,8 +18,24 @@ export function UploadDropzone({
   onSourceUrlChange,
   onVerifySource,
 }: UploadDropzoneProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFiles = (files: FileList | null) => {
+    const file = files?.[0];
+    if (file) {
+      onSelectFile(file);
+    }
+  };
+
   return (
-    <div className="rounded-lg border border-dashed border-border-active bg-surface-strong p-6">
+    <div
+      className="rounded-lg border border-dashed border-border-active bg-surface-strong p-6"
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={(event) => {
+        event.preventDefault();
+        handleFiles(event.dataTransfer.files);
+      }}
+    >
       <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h3 className="text-xl font-semibold text-text-primary">Upload regulatory circular</h3>
@@ -30,13 +49,21 @@ export function UploadDropzone({
             <span className="rounded-md border border-border-default px-2.5 py-1">Regulator URL</span>
           </div>
         </div>
-        <button
-          className="inline-flex items-center justify-center rounded-md bg-accent-cyan px-5 py-3 text-center text-sm font-semibold text-background"
-          onClick={() => onSelectFile("Sample RBI circular.pdf")}
+        <Button
+          variant="primary"
+          className="h-12 px-5"
+          onClick={() => fileInputRef.current?.click()}
           type="button"
         >
           Select circular
-        </button>
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.docx,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+          className="hidden"
+          onChange={(event) => handleFiles(event.target.files)}
+        />
       </div>
 
       {selectedFileName && (
@@ -54,13 +81,13 @@ export function UploadDropzone({
             placeholder="Paste RBI, NPCI, CERT-In, SEBI, or IRDAI source URL"
           />
         </label>
-        <button
-          className="inline-flex h-11 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-5 text-center text-sm font-semibold text-text-primary"
+        <Button
+          variant="secondary"
           onClick={onVerifySource}
           type="button"
         >
           {sourceVerified ? "Source verified" : "Verify source"}
-        </button>
+        </Button>
       </div>
     </div>
   );

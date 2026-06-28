@@ -1,6 +1,7 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DepartmentPerformanceTable } from "../components/departments/DepartmentPerformanceTable";
 import { MetricCard } from "../components/ui/MetricCard";
+import { PageContainer, PageHeader } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
 import { departmentPerformance } from "../data/mockData";
 
@@ -15,14 +16,10 @@ const chartColors = {
 
 export function DepartmentsPage() {
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
-      <div>
-        <p className="text-xs font-semibold uppercase text-accent-cyan">Department Performance</p>
-        <h2 className="mt-2 text-3xl font-semibold text-text-primary">Compliance operations performance</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-text-secondary">
-          Compare department workload, evidence quality, high-risk exposure, closure rate, and overdue obligations.
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader eyebrow="Department Performance" title="Compliance operations performance">
+        Compare department workload, evidence quality, high-risk exposure, closure rate, and overdue obligations.
+      </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Assigned Obligations" value="274" change="+31 this month" />
@@ -47,7 +44,22 @@ export function DepartmentsPage() {
         </div>
       </Panel>
 
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {departmentPerformance.map((department) => (
+          <Panel key={department.department} className="min-h-40">
+            <p className="text-xs font-semibold uppercase text-text-muted">{department.department}</p>
+            <p className="mt-3 text-3xl font-semibold text-text-primary">{department.closureRate}%</p>
+            <div className="mt-4 h-2 rounded-full bg-bg-secondary">
+              <div className="h-full rounded-full bg-accent-cyan" style={{ width: `${department.closureRate}%` }} />
+            </div>
+            <p className="mt-3 text-xs leading-5 text-text-secondary">
+              {department.closed}/{department.assigned} closed · {department.overdue} overdue · {department.pendingEvidence} evidence pending
+            </p>
+          </Panel>
+        ))}
+      </div>
+
       <DepartmentPerformanceTable departments={departmentPerformance} />
-    </div>
+    </PageContainer>
   );
 }

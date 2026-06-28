@@ -46,3 +46,9 @@ Invoke-WebRequest http://localhost:8000/api/health
 - `GET /api/documents/{job_id}/obligations` returns extracted obligations and validation.
 - `GET /api/documents/{job_id}/map-cards` returns frontend-ready MAP cards derived from obligations.
 - `GET /api/documents/{job_id}/graph` returns graph JSON.
+- `POST /api/regulators/check` checks configured regulator sources, extracts document links, and flags new/changed links.
+- `POST /api/map-cards/{map_id}/evidence/upload` uploads evidence and returns matched, missing, contradicted, and snippet-backed validation results.
+- `GET /api/map-cards/{map_id}/evidence` returns evidence validation results for a MAP card.
+- `GET /api/audit/events` returns persisted hash-chained audit events plus chain verification status.
+
+Runtime jobs, evidence validation results, regulator link sightings, and audit events are persisted in SQLite tables inside the configured `DB_PATH`.

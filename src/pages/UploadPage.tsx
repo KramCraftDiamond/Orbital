@@ -4,6 +4,7 @@ import { CircularMetadataCard } from "../components/upload/CircularMetadataCard"
 import { ProcessingPipeline } from "../components/upload/ProcessingPipeline";
 import { UploadDropzone } from "../components/upload/UploadDropzone";
 import { Panel, PanelHeader } from "../components/ui/panel";
+import { Button, PageContainer, PageHeader } from "../components/ui/layout";
 import { circulars, regulators } from "../data/mockData";
 import { usePipelineWorkflow } from "../state/PipelineWorkflowContext";
 
@@ -13,17 +14,14 @@ export function UploadPage() {
   const circular = workflow.metadata ?? circulars[0];
   const isProcessing = workflow.status === "processing";
   const intakeComplete = workflow.status === "intake_complete";
+  const hasLiveMetadata = Boolean(workflow.metadata);
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
-      <div>
-        <p className="text-xs font-semibold uppercase text-accent-cyan">Circular Intake</p>
-        <h2 className="mt-2 text-3xl font-semibold text-text-primary">Upload and process regulatory circulars</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-text-secondary">
-          Ingest PDFs, regulator URLs, and scanned notifications. ORBITAL extracts metadata,
-          parses clauses, generates obligation JSON, validates schema, and creates MAP cards.
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader eyebrow="Circular Intake" title="Upload and process regulatory circulars">
+        Ingest PDFs, regulator URLs, and scanned notifications. ORBITAL extracts metadata,
+        parses clauses, generates obligation JSON, validates schema, and creates MAP cards.
+      </PageHeader>
 
       <UploadDropzone
         selectedFileName={workflow.selectedFileName}
@@ -34,7 +32,44 @@ export function UploadPage() {
         onVerifySource={workflow.verifySource}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.2fr]">
+      {workflow.regulatorFindings.length > 0 && (
+        <Panel>
+          <PanelHeader
+            title="Regulator monitor findings"
+            eyebrow={`${workflow.regulatorFindings.filter((item) => item.status !== "seen").length} new or changed`}
+          />
+          <div className="grid gap-3 lg:grid-cols-2">
+            {workflow.regulatorFindings.slice(0, 6).map((finding) => (
+              <div key={finding.url} className="rounded-md border border-border-default bg-surface-strong p-4">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="rounded-md border border-border-default bg-bg-secondary px-2 py-1 text-[10px] font-semibold uppercase text-text-muted">
+                    {finding.regulator}
+                  </span>
+                  <span className="rounded-md border border-accent-cyan/25 bg-accent-cyan/10 px-2 py-1 text-[10px] font-semibold uppercase text-accent-cyan">
+                    {finding.status}
+                  </span>
+                </div>
+                <p className="line-clamp-2 text-sm font-semibold text-text-primary">{finding.title}</p>
+                <p className="mt-2 break-all text-xs text-text-muted">{finding.url}</p>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      {workflow.apiError && (
+        <Panel>
+          <div className="flex gap-3 rounded-md border border-accent-warning/25 bg-accent-warning/10 p-4 text-sm text-text-secondary">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-accent-warning" />
+            <div>
+              <p className="font-semibold text-text-primary">Pipeline needs attention</p>
+              <p className="mt-1">{workflow.apiError}</p>
+            </div>
+          </div>
+        </Panel>
+      )}
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.2fr)]">
         <Panel>
           <PanelHeader title="Document controls" eyebrow="Input metadata" />
           <div className="space-y-4">
@@ -95,7 +130,7 @@ export function UploadPage() {
         </Panel>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.8fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]">
         {intakeComplete ? (
           <CircularMetadataCard circular={circular} />
         ) : (
@@ -115,7 +150,7 @@ export function UploadPage() {
             <Summary icon={FileSearch} label="Clauses parsed" value={String(circular.totalClauses)} />
             <Summary icon={ShieldCheck} label="Obligations found" value={String(circular.totalObligations)} />
             <Summary icon={AlertTriangle} label="High-risk obligations" value={String(circular.highRiskCount)} warning />
-            <Summary icon={CheckCircle2} label="JSON validation" value="Schema valid" />
+            <Summary icon={CheckCircle2} label="JSON validation" value={hasLiveMetadata ? circular.validationStatus : "Awaiting run"} />
           </div>
         </Panel>
       </div>
@@ -128,21 +163,21 @@ export function UploadPage() {
               {intakeComplete ? "Metadata is ready for validation" : "Start the processing sequence"}
             </h3>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">
-              This mocked control path mirrors the backend sequence so every button has a destination
-              before the API wrapper is available.
+              This run uploads the selected document to the FastAPI pipeline, polls backend job status,
+              and loads extracted obligations plus MAP cards when processing completes.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button
-              className="inline-flex h-11 items-center justify-center rounded-md bg-accent-cyan px-5 text-center text-sm font-semibold text-background disabled:cursor-not-allowed disabled:opacity-55"
+            <Button
+              variant="primary"
               onClick={workflow.startProcessing}
-              disabled={isProcessing}
+              disabled={isProcessing || !workflow.selectedFile}
               type="button"
             >
               {isProcessing ? "Processing..." : "Start processing"}
-            </button>
-            <button
-              className="inline-flex h-11 items-center justify-center rounded-md border border-border-default bg-surface-elevated px-5 text-center text-sm font-semibold text-text-primary disabled:cursor-not-allowed disabled:opacity-55"
+            </Button>
+            <Button
+              variant="secondary"
               onClick={async () => {
                 await workflow.continueValidation();
                 navigate("/app/obligations");
@@ -151,11 +186,11 @@ export function UploadPage() {
               type="button"
             >
               Continue validation
-            </button>
+            </Button>
           </div>
         </div>
       </Panel>
-    </div>
+    </PageContainer>
   );
 }
 

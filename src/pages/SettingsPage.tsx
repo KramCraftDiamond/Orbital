@@ -1,17 +1,14 @@
 import { Database, KeyRound, ServerCog, ShieldCheck } from "lucide-react";
+import { PageContainer, PageHeader } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
 import { StatusPill } from "../components/ui/badges";
 
 export function SettingsPage() {
   return (
-    <div className="mx-auto w-full max-w-[1500px] space-y-6 p-5 xl:p-8">
-      <div>
-        <p className="text-xs font-semibold uppercase text-accent-cyan">Settings</p>
-        <h2 className="mt-2 text-3xl font-semibold text-text-primary">Private deployment controls</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-text-secondary">
-          Prototype controls for model routing, schema validation, storage, and audit policy.
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader eyebrow="Settings" title="Private deployment controls">
+        Prototype controls for model routing, schema validation, storage, and audit policy.
+      </PageHeader>
 
       <div className="grid gap-6 xl:grid-cols-2">
         {[
@@ -36,6 +33,6 @@ export function SettingsPage() {
           </Panel>
         ))}
       </div>
-    </div>
+    </PageContainer>
   );
 }
