@@ -1,22 +1,53 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { EvidenceChecklist } from "../components/evidence/EvidenceChecklist";
 import { EvidenceValidationPanel } from "../components/evidence/EvidenceValidationPanel";
 import { DepartmentChip, RiskBadge, StatusPill } from "../components/ui/badges";
 import { Button, PageContainer, PageHeader } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
+import { closeMapCard } from "../services/pipelineApi";
 import { usePipelineWorkflow } from "../state/PipelineWorkflowContext";
 
 export function EvidencePortalPage() {
   const workflow = usePipelineWorkflow();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const selectedMap = workflow.mapCards[0];
-  const selectedEvidence =
-    workflow.evidenceItems.find((item) => item.mapCardId === selectedMap?.id) ?? workflow.evidenceItems[0];
+  const [selectedMapId, setSelectedMapId] = useState(workflow.mapCards[0]?.id ?? "");
+  const [closureState, setClosureState] = useState<"idle" | "closing" | "closed" | "error">("idle");
+  const [closureMessage, setClosureMessage] = useState("");
+  const selectedMap =
+    workflow.mapCards.find((card) => card.id === selectedMapId) ?? workflow.mapCards[0];
+  const selectedEvidenceItems = selectedMap
+    ? workflow.evidenceItems.filter((item) => item.mapCardId === selectedMap.id)
+    : [];
+  const selectedEvidence = selectedEvidenceItems[0];
+
+  useEffect(() => {
+    if (!workflow.mapCards.some((card) => card.id === selectedMapId)) {
+      setSelectedMapId(workflow.mapCards[0]?.id ?? "");
+      setClosureState("idle");
+      setClosureMessage("");
+    }
+  }, [selectedMapId, workflow.mapCards]);
 
   const handleEvidenceFile = async (files: FileList | null) => {
     const file = files?.[0];
-    if (file && selectedMap) {
+    if (file && selectedMap && closureState !== "closed") {
       await workflow.submitEvidence(selectedMap.id, file);
+    }
+  };
+
+  const handleApproveClosure = async () => {
+    if (!selectedMap) return;
+    setClosureState("closing");
+    setClosureMessage("");
+    try {
+      const response = await closeMapCard(selectedMap.id, selectedEvidence?.id ?? "");
+      setClosureState("closed");
+      setClosureMessage(
+        `${response.mapCardId} closed with ${response.completedTasks.length} department task(s) completed.`,
+      );
+    } catch (error) {
+      setClosureState("error");
+      setClosureMessage(error instanceof Error ? error.message : "Closure failed.");
     }
   };
 
@@ -44,6 +75,48 @@ export function EvidencePortalPage() {
         identifies matched and missing requirements, then routes the result for human approval.
       </PageHeader>
 
+      {workflow.mapCards.length > 1 && (
+        <Panel>
+          <PanelHeader title="MAP card selector" eyebrow={`${workflow.mapCards.length} generated cards`} />
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {workflow.mapCards.map((card) => (
+              <button
+                key={card.id}
+                type="button"
+                onClick={() => {
+                  setSelectedMapId(card.id);
+                  setClosureState("idle");
+                  setClosureMessage("");
+                }}
+                className={`rounded-md border p-4 text-left transition-colors ${
+                  card.id === selectedMap.id
+                    ? "border-border-active bg-accent-cyan/10"
+                    : "border-border-default bg-surface-strong hover:border-border-active"
+                }`}
+              >
+                <p className="font-mono text-[10px] uppercase text-text-muted">{card.id}</p>
+                <p className="mt-2 line-clamp-2 text-sm font-semibold text-text-primary">{card.title}</p>
+                <p className="mt-2 text-xs text-text-muted">{card.owner}</p>
+              </button>
+            ))}
+          </div>
+        </Panel>
+      )}
+
+      {closureMessage && (
+        <Panel>
+          <div
+            className={`rounded-md border p-4 text-sm ${
+              closureState === "error"
+                ? "border-accent-critical/25 bg-accent-critical/10 text-accent-critical"
+                : "border-accent-success/25 bg-accent-success/10 text-text-secondary"
+            }`}
+          >
+            {closureMessage}
+          </div>
+        </Panel>
+      )}
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         <Panel>
           <PanelHeader title="Selected MAP Card" eyebrow={selectedMap.id} />
@@ -64,7 +137,13 @@ export function EvidencePortalPage() {
             <p className="mt-2 text-sm text-text-secondary">
               Add reports, policy updates, screenshots, logs, or sign-off records for this MAP Card.
             </p>
-            <Button variant="primary" className="mt-5" onClick={() => fileInputRef.current?.click()} type="button">
+            <Button
+              variant="primary"
+              className="mt-5"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={closureState === "closed"}
+              type="button"
+            >
               Select files
             </Button>
             <input
@@ -88,7 +167,7 @@ export function EvidencePortalPage() {
         <Panel>
           <PanelHeader title="Uploaded Files" eyebrow="Department submission" />
           <div className="space-y-3">
-            {workflow.evidenceItems.map((item) => (
+            {selectedEvidenceItems.length ? selectedEvidenceItems.map((item) => (
               <div key={item.id} className="rounded-md border border-border-default bg-surface-strong p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <span className="text-sm font-semibold text-text-primary">{item.fileName}</span>
@@ -98,14 +177,30 @@ export function EvidencePortalPage() {
                   Uploaded by {item.uploadedBy} on {item.uploadedAt}
                 </p>
               </div>
-            ))}
+            )) : (
+              <div className="rounded-md border border-border-default bg-surface-strong p-4 text-sm text-text-secondary">
+                No evidence has been submitted for this MAP card yet.
+              </div>
+            )}
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <Button variant="success" type="button">
-              Approve closure
+            <Button
+              variant="success"
+              disabled={closureState === "closing" || closureState === "closed"}
+              onClick={handleApproveClosure}
+              type="button"
+            >
+              {closureState === "closing" ? "Closing..." : closureState === "closed" ? "Closure approved" : "Approve closure"}
             </Button>
-            <Button variant="danger" type="button">
+            <Button
+              variant="danger"
+              onClick={() => {
+                setClosureState("idle");
+                setClosureMessage("Revision requested. Departments can submit updated evidence.");
+              }}
+              type="button"
+            >
               Request revision
             </Button>
           </div>

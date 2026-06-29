@@ -6,6 +6,9 @@ from typing import List, Dict, Any
 def get_db(db_path: str = "reg_ingestion.db") -> sqlite_utils.Database:
     """Initialize DB and rigidly create tables with foreign keys if they don't exist."""
     db = sqlite_utils.Database(db_path)
+    db.conn.execute("PRAGMA journal_mode=WAL")
+    db.conn.execute("PRAGMA busy_timeout=30000")
+    db.conn.execute("PRAGMA foreign_keys=ON")
     
     if "documents" not in db.table_names():
         db["documents"].create({

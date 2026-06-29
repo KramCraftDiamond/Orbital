@@ -25,6 +25,7 @@ import { RegulatorBadge, RiskBadge, StatusPill } from "../components/ui/badges";
 import { OrbitalIntelligenceGraph } from "../components/three/OrbitalIntelligenceGraph";
 import { Leaderboard } from "../components/dashboard/Leaderboard";
 import { usePipelineWorkflow } from "../state/PipelineWorkflowContext";
+import type { MAPCard } from "../types/orbital";
 
 const chartColors = {
   primary: "#412D15",
@@ -48,6 +49,8 @@ export function CommandCenterPage() {
   const overdue = activeCards.filter((card) => card.status === "Overdue").length;
   const pendingEvidence = activeEvidence.filter((item) => item.validationResult !== "Pass").length;
   const validationLabel = workflow.validationScore > 0 ? `${Math.round(workflow.validationScore * 100)}%` : "Awaiting run";
+  const departmentWorkload =
+    workflow.dataset === "live" && activeCards.length ? deriveDeptData(activeCards) : departmentPerformance;
 
   return (
     <PageContainer>
@@ -169,10 +172,10 @@ export function CommandCenterPage() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.85fr)]">
         <Panel>
-          <PanelHeader title="Department Workload" eyebrow={workflow.dataset === "live" ? "Portfolio simulation" : "Closed, open, overdue"} />
+          <PanelHeader title="Department Workload" eyebrow={workflow.dataset === "live" && activeCards.length ? "Live MAP card data" : "Closed, open, overdue"} />
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={departmentPerformance} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={departmentWorkload} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid stroke="rgba(65,45,21,0.10)" vertical={false} />
                 <XAxis dataKey="department" tick={{ fill: chartColors.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: chartColors.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -213,4 +216,23 @@ export function CommandCenterPage() {
       <Leaderboard />
     </PageContainer>
   );
+}
+
+function deriveDeptData(cards: MAPCard[]) {
+  const grouped = new Map<string, MAPCard[]>();
+  for (const card of cards) {
+    const department = card.assignedDepartments[0] || card.owner || "Compliance";
+    grouped.set(department, [...(grouped.get(department) || []), card]);
+  }
+
+  return Array.from(grouped.entries()).map(([department, items]) => {
+    const closed = items.filter((card) => card.status === "Closed").length;
+    const overdue = items.filter((card) => card.status === "Overdue").length;
+    return {
+      department,
+      assigned: items.length,
+      closed,
+      overdue,
+    };
+  });
 }

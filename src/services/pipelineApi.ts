@@ -163,6 +163,42 @@ export type AuditEventsResponse = {
 
 export type EvidenceValidationResponse = Evidence;
 
+export type DepartmentTask = {
+  taskId: number;
+  obligationId: number;
+  assignedDepartment: string;
+  taskStatus: "pending" | "completed" | string;
+  evidenceSubmitted?: string | null;
+  submittedAt?: string | null;
+  actor: string;
+  action: string;
+  deadline?: unknown;
+  mandatory: boolean;
+  domain: string;
+  departments: string[];
+  evidenceRequired: string[];
+  severity: "low" | "medium" | "high" | "critical" | string;
+  sourceSection: string;
+  sourcePage: number;
+  reviewFlag?: string | null;
+  obligationStatus: string;
+};
+
+export type DepartmentTasksResponse = {
+  tasks: DepartmentTask[];
+  total: number;
+};
+
+export type CompleteTaskResponse = {
+  task: DepartmentTask;
+};
+
+export type CloseMapCardResponse = {
+  mapCardId: string;
+  status: "Closed";
+  completedTasks: DepartmentTask[];
+};
+
 export type RegulatorFinding = {
   regulator: string;
   title: string;
@@ -300,6 +336,35 @@ export async function uploadEvidence(mapCardId: string, file: File) {
 
   return request<EvidenceValidationResponse>(`/api/map-cards/${encodeURIComponent(mapCardId)}/evidence/upload`, {
     method: "POST",
+    body: formData,
+  });
+}
+
+export async function fetchDepartmentTasks(department = "") {
+  const query = department ? `?department=${encodeURIComponent(department)}` : "";
+  return request<DepartmentTasksResponse>(`/api/tasks${query}`);
+}
+
+export async function completeTask(taskId: number, evidenceId = "") {
+  const formData = new FormData();
+  if (evidenceId) {
+    formData.append("evidence_id", evidenceId);
+  }
+
+  return request<CompleteTaskResponse>(`/api/tasks/${taskId}/complete`, {
+    method: "PATCH",
+    body: formData,
+  });
+}
+
+export async function closeMapCard(mapCardId: string, evidenceId = "") {
+  const formData = new FormData();
+  if (evidenceId) {
+    formData.append("evidence_id", evidenceId);
+  }
+
+  return request<CloseMapCardResponse>(`/api/map-cards/${encodeURIComponent(mapCardId)}/close`, {
+    method: "PATCH",
     body: formData,
   });
 }
