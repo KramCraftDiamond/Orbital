@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DepartmentPerformanceTable } from "../components/departments/DepartmentPerformanceTable";
+import { RiskBadge, StatusPill } from "../components/ui/badges";
 import { MetricCard } from "../components/ui/MetricCard";
 import { PageContainer, PageHeader } from "../components/ui/layout";
 import { Panel, PanelHeader } from "../components/ui/panel";
 import { departmentPerformance } from "../data/mockData";
-import { fetchDepartmentTasks, type DepartmentTask } from "../services/pipelineApi";
+import { type DepartmentTask, fetchDepartmentTasks } from "../services/pipelineApi";
+import type { DepartmentPerformance, Severity } from "../types/orbital";
 
 const chartColors = {
   primary: "#412D15",
@@ -16,85 +18,76 @@ const chartColors = {
   tooltipBorder: "rgba(65,45,21,0.18)",
 };
 
-/** Aggregate raw task rows into per-dept chart rows. */
-function aggregateTasks(tasks: DepartmentTask[]) {
-  const deptMap: Record<string, { assigned: number; closed: number; overdue: number; evidence: number }> = {};
-  for (const task of tasks) {
-    const dept = task.assigned_department ?? "Unknown";
-    if (!deptMap[dept]) deptMap[dept] = { assigned: 0, closed: 0, overdue: 0, evidence: 0 };
-    deptMap[dept].assigned += 1;
-    if (task.task_status === "completed") deptMap[dept].closed += 1;
-    if (task.task_status === "overdue") deptMap[dept].overdue += 1;
-    if (!task.evidence_submitted) deptMap[dept].evidence += 1;
-  }
-  return Object.entries(deptMap).map(([department, v]) => ({
-    department: department.slice(0, 16),
-    assigned: v.assigned,
-    closed: v.closed,
-    overdue: v.overdue,
-    closureRate: v.assigned ? Math.round((v.closed / v.assigned) * 100) : 0,
-    evidenceRejectionRate: v.assigned ? Math.round((v.evidence / v.assigned) * 100) : 0,
-    pendingEvidence: v.evidence,
-  }));
-}
-
 export function DepartmentsPage() {
-  const [liveTasks, setLiveTasks] = useState<DepartmentTask[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [tasks, setTasks] = useState<DepartmentTask[]>([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    setLoading(true);
+    let alive = true;
     fetchDepartmentTasks()
-      .then((res) => setLiveTasks(res.tasks))
-      .catch(() => setLiveTasks(null))
-      .finally(() => setLoading(false));
+      .then((response) => {
+        if (alive) {
+          setTasks(response.tasks);
+          setError("");
+        }
+      })
+      .catch((caught) => {
+        if (alive) {
+          setError(caught instanceof Error ? caught.message : "Unable to load live task data.");
+        }
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
-  const isLive = liveTasks !== null && liveTasks.length > 0;
-  const deptData = isLive ? aggregateTasks(liveTasks) : departmentPerformance;
-
-  const totalAssigned = isLive ? liveTasks.length : 274;
-  const totalClosed = isLive ? liveTasks.filter((t) => t.task_status === "completed").length : 216;
-  const totalOverdue = isLive ? liveTasks.filter((t) => t.task_status === "overdue").length : 24;
-  const closureRate = totalAssigned > 0 ? Math.round((totalClosed / totalAssigned) * 100) : 0;
+  const liveDepartments = useMemo(() => aggregateTasks(tasks), [tasks]);
+  const departments = liveDepartments.length ? liveDepartments : departmentPerformance;
+  const assigned = departments.reduce((sum, item) => sum + item.assigned, 0);
+  const closed = departments.reduce((sum, item) => sum + item.closed, 0);
+  const overdue = departments.reduce((sum, item) => sum + item.overdue, 0);
+  const pendingEvidence = departments.reduce((sum, item) => sum + item.pendingEvidence, 0);
+  const liveMode = liveDepartments.length > 0;
 
   return (
     <PageContainer>
       <PageHeader eyebrow="Department Performance" title="Compliance operations performance">
-        {isLive
-          ? `Live data from ${liveTasks.length} active tasks across ${deptData.length} departments.`
-          : "Compare department workload, evidence quality, high-risk exposure, closure rate, and overdue obligations."}
+        Compare department workload, evidence quality, high-risk exposure, closure rate, and overdue obligations.
       </PageHeader>
 
-      {loading && (
-        <p className="text-sm text-text-muted">Loading live department tasks…</p>
+      {error && (
+        <Panel>
+          <div className="rounded-md border border-accent-warning/25 bg-accent-warning/10 p-4 text-sm text-text-secondary">
+            {error}
+          </div>
+        </Panel>
       )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Assigned Obligations" value={String(totalAssigned)} change={isLive ? "Live backend data" : "+31 this month"} />
-        <MetricCard label="Closed Obligations" value={String(totalClosed)} change={`${closureRate}% weighted closure`} tone="success" />
-        <MetricCard label="Overdue" value={String(totalOverdue)} change={isLive ? "Requires attention" : "Cybersecurity and Ops lead"} tone="warning" />
-        <MetricCard label="Avg Closure Time" value={isLive ? "Live run" : "8.3d"} change={isLive ? "Pipeline active" : "-1.4d vs last month"} tone="violet" />
+        <MetricCard label="Assigned Obligations" value={String(assigned)} change={liveMode ? "Live task table" : "Demo seed data"} />
+        <MetricCard label="Closed Obligations" value={String(closed)} change={`${percent(closed, assigned)}% closure`} tone="success" />
+        <MetricCard label="Overdue" value={String(overdue)} change={`${pendingEvidence} evidence pending`} tone="warning" />
+        <MetricCard label="Departments Active" value={String(departments.length)} change={liveMode ? "From SQLite tasks" : "Portfolio simulation"} tone="violet" />
       </div>
 
       <Panel>
-        <PanelHeader title="Department Closure Rate" eyebrow={isLive ? "Live pipeline data" : "Executive view"} />
+        <PanelHeader title="Department Closure Rate" eyebrow={liveMode ? "Live task data" : "Executive view"} />
         <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={deptData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <BarChart data={departments} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid stroke="rgba(65,45,21,0.10)" vertical={false} />
               <XAxis dataKey="department" tick={{ fill: chartColors.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: chartColors.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: chartColors.tooltip, border: `1px solid ${chartColors.tooltipBorder}`, borderRadius: 8, color: chartColors.tooltipText }} />
-              <Bar dataKey="closureRate" fill={chartColors.primary} radius={[4, 4, 0, 0]} name="Closure %" />
-              <Bar dataKey="evidenceRejectionRate" fill={chartColors.critical} radius={[4, 4, 0, 0]} name="Evidence Pending %" />
+              <Bar dataKey="closureRate" fill={chartColors.primary} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="evidenceRejectionRate" fill={chartColors.critical} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </Panel>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {deptData.map((department) => (
+        {departments.map((department) => (
           <Panel key={department.department} className="min-h-40">
             <p className="text-xs font-semibold uppercase text-text-muted">{department.department}</p>
             <p className="mt-3 text-3xl font-semibold text-text-primary">{department.closureRate}%</p>
@@ -102,64 +95,87 @@ export function DepartmentsPage() {
               <div className="h-full rounded-full bg-accent-cyan" style={{ width: `${department.closureRate}%` }} />
             </div>
             <p className="mt-3 text-xs leading-5 text-text-secondary">
-              {department.closed}/{department.assigned} closed · {department.overdue} overdue · {department.pendingEvidence} evidence pending
+              {department.closed}/{department.assigned} closed, {department.overdue} overdue, {department.pendingEvidence} evidence pending
             </p>
           </Panel>
         ))}
       </div>
 
-      <DepartmentPerformanceTable departments={deptData} />
-
-      {/* Live task queue table */}
-      {isLive && (
+      {tasks.length > 0 && (
         <Panel>
-          <PanelHeader title="Active Task Queue" eyebrow={`${liveTasks.filter((t) => t.task_status === "pending").length} pending tasks`} />
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border-default text-left text-xs text-text-muted">
-                  <th className="pb-3 pr-4 font-medium">Dept</th>
-                  <th className="pb-3 pr-4 font-medium">Action</th>
-                  <th className="pb-3 pr-4 font-medium">Severity</th>
-                  <th className="pb-3 pr-4 font-medium">Domain</th>
-                  <th className="pb-3 font-medium">Status</th>
+          <PanelHeader title="Live Task Queue" eyebrow="Top 20 active tasks" />
+          <div className="max-h-96 overflow-auto">
+            <table className="w-full min-w-[760px] border-separate border-spacing-y-2 text-left text-sm">
+              <thead className="text-xs uppercase text-text-muted">
+                <tr>
+                  <th className="px-3 py-2">Task</th>
+                  <th className="px-3 py-2">Department</th>
+                  <th className="px-3 py-2">Severity</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Evidence</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-default">
-                {liveTasks.slice(0, 20).map((task) => (
-                  <tr key={task.task_id} className="text-text-secondary">
-                    <td className="py-3 pr-4 text-xs font-semibold text-text-primary">{task.assigned_department}</td>
-                    <td className="py-3 pr-4 max-w-xs">
-                      <p className="line-clamp-2 text-xs">{task.action}</p>
+              <tbody>
+                {tasks.slice(0, 20).map((task) => (
+                  <tr key={task.taskId} className="bg-surface-strong">
+                    <td className="rounded-l-md px-3 py-3 font-semibold text-text-primary">{task.action}</td>
+                    <td className="px-3 py-3 text-text-secondary">{task.assignedDepartment}</td>
+                    <td className="px-3 py-3">
+                      <RiskBadge severity={normalizeSeverity(task.severity)} />
                     </td>
-                    <td className="py-3 pr-4">
-                      <span className={`rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                        task.severity === "critical" ? "bg-red-500/20 text-red-400"
-                        : task.severity === "high" ? "bg-orange-500/20 text-orange-400"
-                        : task.severity === "medium" ? "bg-yellow-500/20 text-yellow-600"
-                        : "bg-green-500/20 text-green-600"
-                      }`}>
-                        {task.severity}
-                      </span>
+                    <td className="px-3 py-3">
+                      <StatusPill status={task.taskStatus} />
                     </td>
-                    <td className="py-3 pr-4 text-xs">{task.domain}</td>
-                    <td className="py-3">
-                      <span className={`rounded px-2 py-0.5 text-[10px] font-semibold ${
-                        task.task_status === "completed" ? "bg-accent-success/20 text-accent-success" : "bg-accent-cyan/20 text-accent-cyan"
-                      }`}>
-                        {task.task_status}
-                      </span>
+                    <td className="rounded-r-md px-3 py-3 text-text-secondary">
+                      {task.evidenceSubmitted || "Pending"}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {liveTasks.length > 20 && (
-              <p className="mt-3 text-center text-xs text-text-muted">Showing 20 of {liveTasks.length} tasks</p>
-            )}
           </div>
         </Panel>
       )}
+
+      <DepartmentPerformanceTable departments={departments} />
     </PageContainer>
   );
+}
+
+function aggregateTasks(tasks: DepartmentTask[]): DepartmentPerformance[] {
+  const grouped = new Map<string, DepartmentTask[]>();
+  for (const task of tasks) {
+    const key = task.assignedDepartment || "Compliance";
+    grouped.set(key, [...(grouped.get(key) || []), task]);
+  }
+
+  return Array.from(grouped.entries()).map(([department, items]) => {
+    const assigned = items.length;
+    const closed = items.filter((task) => task.taskStatus === "completed").length;
+    const highRisk = items.filter((task) => ["high", "critical"].includes(String(task.severity).toLowerCase())).length;
+    const pendingEvidence = items.filter((task) => !task.evidenceSubmitted && task.taskStatus !== "completed").length;
+    return {
+      department,
+      assigned,
+      closed,
+      overdue: 0,
+      pendingEvidence,
+      averageClosureTime: "Live",
+      highRiskExposure: `${highRisk} high-risk`,
+      evidenceRejectionRate: pendingEvidence ? Math.round((pendingEvidence / assigned) * 100) : 0,
+      closureRate: percent(closed, assigned),
+    };
+  });
+}
+
+function percent(value: number, total: number) {
+  return total ? Math.round((value / total) * 100) : 0;
+}
+
+function normalizeSeverity(value: string): Severity {
+  const severity = String(value).toLowerCase();
+  if (severity === "critical" || severity === "high" || severity === "medium" || severity === "low") {
+    return severity as Severity;
+  }
+  return "medium";
 }

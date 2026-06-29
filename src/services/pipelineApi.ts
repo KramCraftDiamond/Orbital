@@ -164,23 +164,39 @@ export type AuditEventsResponse = {
 export type EvidenceValidationResponse = Evidence;
 
 export type DepartmentTask = {
-  task_id: number;
-  task_status: string;
-  assigned_department: string;
-  evidence_submitted: string | null;
-  submitted_at: string | null;
+  taskId: number;
+  obligationId: number;
+  assignedDepartment: string;
+  taskStatus: "pending" | "completed" | string;
+  evidenceSubmitted?: string | null;
+  submittedAt?: string | null;
   actor: string;
   action: string;
-  deadline: string | null;
-  severity: string;
+  deadline?: unknown;
+  mandatory: boolean;
   domain: string;
-  source_section: string;
-  evidence_required: string;
+  departments: string[];
+  evidenceRequired: string[];
+  severity: "low" | "medium" | "high" | "critical" | string;
+  sourceSection: string;
+  sourcePage: number;
+  reviewFlag?: string | null;
+  obligationStatus: string;
 };
 
 export type DepartmentTasksResponse = {
   tasks: DepartmentTask[];
-  count: number;
+  total: number;
+};
+
+export type CompleteTaskResponse = {
+  task: DepartmentTask;
+};
+
+export type CloseMapCardResponse = {
+  mapCardId: string;
+  status: "Closed";
+  completedTasks: DepartmentTask[];
 };
 
 export type RegulatorFinding = {
@@ -331,20 +347,26 @@ export async function fetchDepartmentTasks(department = "") {
 
 export async function completeTask(taskId: number, evidenceId = "") {
   const formData = new FormData();
-  formData.append("evidence_id", evidenceId);
-  return request<{ task_id: number; status: string; evidence_ref: string }>(
-    `/api/tasks/${taskId}/complete`,
-    { method: "PATCH", body: formData },
-  );
+  if (evidenceId) {
+    formData.append("evidence_id", evidenceId);
+  }
+
+  return request<CompleteTaskResponse>(`/api/tasks/${taskId}/complete`, {
+    method: "PATCH",
+    body: formData,
+  });
 }
 
-export async function closeMapCard(mapId: string, evidenceId = "") {
+export async function closeMapCard(mapCardId: string, evidenceId = "") {
   const formData = new FormData();
-  formData.append("evidence_id", evidenceId);
-  return request<{ map_id: string; status: string; tasks_closed: number }>(
-    `/api/map-cards/${encodeURIComponent(mapId)}/close`,
-    { method: "PATCH", body: formData },
-  );
+  if (evidenceId) {
+    formData.append("evidence_id", evidenceId);
+  }
+
+  return request<CloseMapCardResponse>(`/api/map-cards/${encodeURIComponent(mapCardId)}/close`, {
+    method: "PATCH",
+    body: formData,
+  });
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {

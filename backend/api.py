@@ -10,9 +10,6 @@ Or from the repository root:
 
 from __future__ import annotations
 
-from dotenv import load_dotenv
-load_dotenv()
-
 import json
 import os
 import shutil
@@ -23,6 +20,8 @@ import hashlib
 import html as html_lib
 import re
 import sqlite3
+import threading
+import time
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -33,10 +32,14 @@ from urllib.request import Request, urlopen
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
+
+load_dotenv(BASE_DIR / ".env")
+load_dotenv()
 
 UPLOAD_DIR = BASE_DIR / "uploads"
 OUTPUT_DIR = BASE_DIR / "output"
@@ -82,12 +85,14 @@ JOBS: dict[str, dict[str, Any]] = {}
 AUDIT_EVENTS: list[dict[str, Any]] = []
 EVIDENCE_RESULTS: dict[str, list[dict[str, Any]]] = {}
 RUNTIME_DB_READY = False
+MONITOR_THREAD_STARTED = False
+MONITOR_INTERVAL_SECONDS = int(os.environ.get("MONITOR_INTERVAL_SECONDS", "3600"))
 
 
 @app.on_event("startup")
 def load_persistent_runtime_state() -> None:
     initialize_runtime_state()
-    _start_regulator_monitor()
+    start_regulator_monitor()
 
 
 @app.get("/api/health")
@@ -97,6 +102,10 @@ def health() -> dict[str, str]:
 
 @app.post("/api/regulators/check")
 def check_regulators(source_url: str = Form(default="")) -> dict[str, Any]:
+    return run_regulator_check(source_url)
+
+
+def run_regulator_check(source_url: str = "") -> dict[str, Any]:
     sources = [{"regulator": "Manual source", "url": source_url.strip()}] if source_url.strip() else REGULATOR_SOURCES
     findings: list[dict[str, Any]] = []
     errors: list[dict[str, str]] = []
@@ -284,85 +293,47 @@ def get_evidence(map_id: str) -> dict[str, Any]:
     return {"mapCardId": map_id, "evidence": EVIDENCE_RESULTS.get(map_id, [])}
 
 
-@app.get("/api/audit/events")
-def get_audit_events() -> dict[str, Any]:
-    return {"events": AUDIT_EVENTS, "verified": verify_audit_chain()}
-
-
 @app.get("/api/tasks")
-def list_tasks(department: str = "") -> dict[str, Any]:
-    """Return pending tasks, optionally filtered by department."""
-    try:
-        from ingestion.storage.db import get_pending_tasks, get_db
-        db = get_db(str(DB_PATH))
-        if department.strip():
-            tasks = get_pending_tasks(str(DB_PATH), department.strip())
-        else:
-            query = """
-            SELECT t.id as task_id, t.status as task_status,
-                   t.assigned_department, t.evidence_submitted, t.submitted_at,
-                   o.actor, o.action, o.deadline, o.severity, o.domain,
-                   o.source_section, o.evidence_required
-            FROM tasks t
-            JOIN obligations o ON t.obligation_id = o.id
-            ORDER BY o.severity DESC
-            """
-            tasks = list(db.query(query))
-        return {"tasks": tasks, "count": len(tasks)}
-    except Exception as exc:
-        return {"tasks": [], "count": 0, "error": str(exc)}
+def get_tasks(department: str = "") -> dict[str, Any]:
+    tasks = list_tasks(department.strip() or None)
+    return {"tasks": tasks, "total": len(tasks)}
 
 
 @app.patch("/api/tasks/{task_id}/complete")
-async def complete_task(
-    task_id: int,
-    evidence_id: str = Form(default=""),
-) -> dict[str, Any]:
-    """Mark a task complete. Auto-closes parent obligation when all dept tasks done."""
-    try:
-        from ingestion.storage.db import mark_task_complete
-        evidence_ref = evidence_id.strip() or f"manual-closure-{task_id}"
-        mark_task_complete(str(DB_PATH), task_id, evidence_ref)
-        append_audit_event(
-            entity_type="Task",
-            entity_id=str(task_id),
-            action="Task marked complete",
-            actor="Compliance Officer",
-            details=f"Task {task_id} closed with evidence reference: {evidence_ref}.",
-        )
-        return {"task_id": task_id, "status": "completed", "evidence_ref": evidence_ref}
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+def complete_task(task_id: int, evidence_id: str = Form(default="")) -> dict[str, Any]:
+    task = mark_task_complete_runtime(task_id, evidence_id or "Human-approved evidence")
+    append_audit_event(
+        entity_type="Approval",
+        entity_id=str(task_id),
+        action="Task completed",
+        actor="Compliance reviewer",
+        details=f"Task {task_id} completed with evidence reference {evidence_id or 'manual approval'}.",
+        severity=task.get("severity"),
+    )
+    return {"task": task}
 
 
 @app.patch("/api/map-cards/{map_id}/close")
-async def close_map_card(map_id: str, evidence_id: str = Form(default="")) -> dict[str, Any]:
-    """Human-approved closure of a MAP card — finds and completes all its pending tasks."""
-    closed_tasks: list[int] = []
-    try:
-        from ingestion.storage.db import get_db, mark_task_complete
-        db = get_db(str(DB_PATH))
-        obligation_id_str = map_id.replace("MAP-OBL-", "").replace("MAP-", "")
+def close_map_card(map_id: str, evidence_id: str = Form(default="")) -> dict[str, Any]:
+    card = find_map_card(map_id)
+    if not card:
+        raise HTTPException(status_code=404, detail="MAP card not found.")
 
-        # Find tasks linked to this MAP card's obligation by action text match (best-effort)
-        rows = list(db.query(
-            "SELECT t.id FROM tasks t JOIN obligations o ON t.obligation_id = o.id WHERE t.status != 'completed'"
-        ))
-        evidence_ref = evidence_id.strip() or f"human-closure-{map_id}"
-        for row in rows:
-            mark_task_complete(str(DB_PATH), row["id"], evidence_ref)
-            closed_tasks.append(row["id"])
+    completed_tasks = close_tasks_for_map_card(card, evidence_id or "Human-approved MAP closure")
+    append_audit_event(
+        entity_type="MAPCard",
+        entity_id=map_id,
+        action="MAP card closed",
+        actor="Compliance reviewer",
+        details=f"Closed {len(completed_tasks)} task(s) for {map_id} with evidence reference {evidence_id or 'manual approval'}.",
+        severity=card.get("severity"),
+    )
+    return {"mapCardId": map_id, "status": "Closed", "completedTasks": completed_tasks}
 
-        append_audit_event(
-            entity_type="MAPCard",
-            entity_id=map_id,
-            action="MAP card closed by compliance officer",
-            actor="Compliance Officer",
-            details=f"MAP card {map_id} approved for closure. {len(closed_tasks)} task(s) completed. Evidence: {evidence_ref}.",
-        )
-        return {"map_id": map_id, "status": "closed", "tasks_closed": len(closed_tasks)}
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+
+@app.get("/api/audit/events")
+def get_audit_events() -> dict[str, Any]:
+    return {"events": AUDIT_EVENTS, "verified": verify_audit_chain()}
 
 
 @app.get("/api/circulars")
@@ -714,9 +685,11 @@ def initialize_runtime_state() -> None:
 
 
 def connect_runtime_db() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.execute("PRAGMA journal_mode=WAL")
+    conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")
+    conn.execute("PRAGMA foreign_keys=ON")
     return conn
 
 
@@ -845,6 +818,190 @@ def save_regulator_link(link: dict[str, Any]) -> None:
         )
 
 
+def start_regulator_monitor() -> None:
+    global MONITOR_THREAD_STARTED
+    if MONITOR_THREAD_STARTED:
+        return
+    MONITOR_THREAD_STARTED = True
+    thread = threading.Thread(target=_run_regulator_monitor, name="orbital-regulator-monitor", daemon=True)
+    thread.start()
+
+
+def _run_regulator_monitor() -> None:
+    while True:
+        try:
+            run_regulator_check()
+        except Exception as exc:
+            append_audit_event(
+                entity_type="System",
+                entity_id="regulator-monitor",
+                action="Regulator monitor failed",
+                actor="ORBITAL Monitor",
+                details=str(exc),
+                severity="medium",
+            )
+        time.sleep(MONITOR_INTERVAL_SECONDS)
+
+
+def list_tasks(department: str | None = None) -> list[dict[str, Any]]:
+    ensure_runtime_db()
+    if not table_exists("tasks") or not table_exists("obligations"):
+        return []
+
+    params: list[Any] = []
+    where = ""
+    if department:
+        where = "WHERE t.assigned_department = ?"
+        params.append(department)
+
+    query = f"""
+        SELECT
+            t.id AS task_id,
+            t.obligation_id,
+            t.assigned_department,
+            t.status AS task_status,
+            t.evidence_submitted,
+            t.submitted_at,
+            o.actor,
+            o.action,
+            o.deadline,
+            o.mandatory,
+            o.domain,
+            o.department,
+            o.evidence_required,
+            o.severity,
+            o.source_section,
+            o.source_page,
+            o.review_flag,
+            o.status AS obligation_status
+        FROM tasks t
+        JOIN obligations o ON t.obligation_id = o.id
+        {where}
+        ORDER BY
+            CASE LOWER(o.severity)
+                WHEN 'critical' THEN 0
+                WHEN 'high' THEN 1
+                WHEN 'medium' THEN 2
+                ELSE 3
+            END,
+            t.id DESC
+    """
+    with connect_runtime_db() as conn:
+        rows = [dict(row) for row in conn.execute(query, params)]
+    return [hydrate_task(row) for row in rows]
+
+
+def mark_task_complete_runtime(task_id: int, evidence: str) -> dict[str, Any]:
+    ensure_runtime_db()
+    if not table_exists("tasks"):
+        raise HTTPException(status_code=404, detail="Task table not found. Run a pipeline job first.")
+
+    submitted_at = datetime.utcnow().isoformat() + "Z"
+    with connect_runtime_db() as conn:
+        task_row = conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+        if not task_row:
+            raise HTTPException(status_code=404, detail="Task not found.")
+
+        conn.execute(
+            """
+            UPDATE tasks
+            SET status = 'completed', evidence_submitted = ?, submitted_at = ?
+            WHERE id = ?
+            """,
+            (evidence, submitted_at, task_id),
+        )
+
+        obligation_id = task_row["obligation_id"]
+        pending = conn.execute(
+            "SELECT COUNT(*) AS c FROM tasks WHERE obligation_id = ? AND status != 'completed'",
+            (obligation_id,),
+        ).fetchone()["c"]
+        if pending == 0 and table_exists("obligations"):
+            conn.execute("UPDATE obligations SET status = 'completed' WHERE id = ?", (obligation_id,))
+
+    updated = [task for task in list_tasks() if task["taskId"] == task_id]
+    return updated[0] if updated else {"taskId": task_id, "taskStatus": "completed", "evidenceSubmitted": evidence, "submittedAt": submitted_at}
+
+
+def close_tasks_for_map_card(card: dict[str, Any], evidence: str) -> list[dict[str, Any]]:
+    tasks = find_tasks_for_map_card(card)
+    completed: list[dict[str, Any]] = []
+    for task in tasks:
+        if task.get("taskStatus") != "completed":
+            completed.append(mark_task_complete_runtime(task["taskId"], evidence))
+        else:
+            completed.append(task)
+    return completed
+
+
+def find_tasks_for_map_card(card: dict[str, Any]) -> list[dict[str, Any]]:
+    action = normalize_text(card.get("summary") or card.get("title") or "")
+    departments = {normalize_text(item) for item in card.get("assignedDepartments", [])}
+    matched: list[dict[str, Any]] = []
+    for task in list_tasks():
+        task_action = normalize_text(task.get("action", ""))
+        task_dept = normalize_text(task.get("assignedDepartment", ""))
+        if action and task_action == action:
+            if not departments or task_dept in departments:
+                matched.append(task)
+
+    if matched:
+        return matched
+
+    obligation_id = str(card.get("obligationId", "")).replace("MAP-", "")
+    return [
+        task for task in list_tasks()
+        if obligation_id and obligation_id in str(task.get("sourceSection", ""))
+    ]
+
+
+def table_exists(table_name: str) -> bool:
+    with connect_runtime_db() as conn:
+        row = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (table_name,),
+        ).fetchone()
+    return row is not None
+
+
+def hydrate_task(row: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "taskId": row.get("task_id"),
+        "obligationId": row.get("obligation_id"),
+        "assignedDepartment": row.get("assigned_department") or "Compliance",
+        "taskStatus": row.get("task_status") or "pending",
+        "evidenceSubmitted": row.get("evidence_submitted"),
+        "submittedAt": row.get("submitted_at"),
+        "actor": row.get("actor") or "bank",
+        "action": row.get("action") or "Review regulatory obligation",
+        "deadline": parse_jsonish(row.get("deadline")),
+        "mandatory": bool(row.get("mandatory")),
+        "domain": row.get("domain") or "Other",
+        "departments": parse_jsonish(row.get("department")) or [],
+        "evidenceRequired": parse_jsonish(row.get("evidence_required")) or [],
+        "severity": row.get("severity") or "medium",
+        "sourceSection": row.get("source_section") or "N/A",
+        "sourcePage": row.get("source_page") or 0,
+        "reviewFlag": row.get("review_flag"),
+        "obligationStatus": row.get("obligation_status") or "pending",
+    }
+
+
+def parse_jsonish(value: Any) -> Any:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        return value
+    try:
+        return json.loads(value)
+    except Exception:
+        return value
+
+
+def normalize_text(value: Any) -> str:
+    return re.sub(r"\s+", " ", str(value or "").strip().lower())
+
+
 def discover_document_links(regulator: str, source_url: str) -> list[dict[str, Any]]:
     html = fetch_text(source_url)
     hrefs = re.findall(r'href=["\']([^"\']+)["\']', html, flags=re.IGNORECASE)
@@ -898,41 +1055,3 @@ def extract_link_titles(html: str) -> dict[str, str]:
 @app.exception_handler(FileNotFoundError)
 def missing_artifact_handler(_request: Any, exc: FileNotFoundError) -> JSONResponse:
     return JSONResponse(status_code=404, content={"detail": f"Artifact not found: {exc}"})
-
-
-# ── Background Regulator Monitor ──────────────────────────────────────────────
-import threading
-import time as _time
-
-_MONITOR_INTERVAL_SECONDS = 3600  # check every hour
-
-
-def _run_regulator_monitor() -> None:
-    """Background daemon thread: scrapes regulator sources every hour."""
-    while True:
-        _time.sleep(_MONITOR_INTERVAL_SECONDS)
-        try:
-            for source in REGULATOR_SOURCES:
-                links = discover_document_links(source["regulator"], source["url"])
-                new_count = 0
-                for link in links:
-                    previous = get_seen_regulator_link(link["url"])
-                    if not previous or previous.get("checksum") != link["checksum"]:
-                        new_count += 1
-                    save_regulator_link(link)
-                if new_count:
-                    append_audit_event(
-                        entity_type="System",
-                        entity_id=source["regulator"],
-                        action="Regulator monitor detected changes",
-                        actor="ORBITAL Monitor",
-                        details=f"{new_count} new/changed document(s) found at {source['url']}.",
-                    )
-        except Exception as exc:
-            # Silent — don't crash the monitor thread
-            pass
-
-
-def _start_regulator_monitor() -> None:
-    thread = threading.Thread(target=_run_regulator_monitor, daemon=True, name="regulator-monitor")
-    thread.start()

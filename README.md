@@ -49,6 +49,16 @@ Invoke-WebRequest http://localhost:8000/api/health
 - `POST /api/regulators/check` checks configured regulator sources, extracts document links, and flags new/changed links.
 - `POST /api/map-cards/{map_id}/evidence/upload` uploads evidence and returns matched, missing, contradicted, and snippet-backed validation results.
 - `GET /api/map-cards/{map_id}/evidence` returns evidence validation results for a MAP card.
+- `GET /api/tasks?department={name}` returns department task rows from SQLite.
+- `PATCH /api/tasks/{task_id}/complete` marks a department task complete with an evidence reference.
+- `PATCH /api/map-cards/{map_id}/close` human-approves a MAP card and completes matching department tasks.
 - `GET /api/audit/events` returns persisted hash-chained audit events plus chain verification status.
 
-Runtime jobs, evidence validation results, regulator link sightings, and audit events are persisted in SQLite tables inside the configured `DB_PATH`.
+Runtime jobs, evidence validation results, regulator link sightings, and audit events are persisted in SQLite tables inside the configured `DB_PATH`. The backend also starts an hourly regulator monitor on API startup; set `MONITOR_INTERVAL_SECONDS` to tune the cadence for demos.
+
+Pipeline CLI validation:
+
+```powershell
+cd backend
+python pipeline.py path\to\circular.pdf --backend groq --validate
+```

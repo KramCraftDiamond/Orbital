@@ -83,16 +83,22 @@ def run(
     normalized = normalize_obligations(raw_obligations)
     logger.info(f"      {len(normalized)} after deduplication")
 
-    # ── 4b. Optional second-pass LLM validation ─────────────────────────────
-    flagged_count = 0
     if run_analysis and normalized:
-        logger.info("[4b] Running second-pass LLM validation")
-        from ingestion.validate.validator import validate_obligations as llm_validate
-        clause_texts = {c.section_id: c.raw_text for c in chunks if hasattr(c, 'section_id')}
-        validated = llm_validate(normalized, clause_texts, backend=backend)
-        flagged_count = sum(1 for obs in validated if obs.get("review_flag"))
-        normalized = validated
-        logger.info(f"      {flagged_count} obligations flagged for review")
+        logger.info("[4b/5] Running second-pass obligation validation")
+        from ingestion.validate.validator import validate_obligations
+        clause_texts = {
+            c.section_id: c.raw_text
+            for c in chunks
+            if getattr(c, "section_id", None)
+        }
+        for obs in normalized:
+            if not obs.get("source_section") and obs.get("section_id"):
+                obs["source_section"] = obs.get("section_id")
+        normalized = validate_obligations(normalized, clause_texts, backend=backend)
+        flagged_review = sum(1 for obs in normalized if obs.get("review_flag"))
+        logger.info(f"      {flagged_review} obligations flagged for review")
+    else:
+        flagged_review = 0
 
     # ── 5. Assemble JSON + Graph ──────────────────────────────────────────────
     logger.info("[5/5] Building JSON + graph")
@@ -136,7 +142,7 @@ def run(
         "candidates": len(candidates),
         "obligations": len(raw_obligations),
         "after_dedup": len(normalized),
-        "flagged_review": flagged_count,
+        "flagged_review": flagged_review,
         "departments_affected": sorted({
             d for obs in normalized
             for d in (obs.get("departments") or obs.get("department") or [])
@@ -176,9 +182,9 @@ def main():
                    help="Chunks per LLM call — higher = fewer API calls (default: 5)")
     p.add_argument("--out",       default="output", help="Output directory (default: output/)")
     p.add_argument("--analyze",   action="store_true",
-                   help="Second-pass LLM validation: flags missing conditions/exceptions (costs extra API calls)")
-    p.add_argument("--validate",  action="store_true", dest="analyze",
-                   help="Alias for --analyze (same flag, documented in README)")
+                   help="Extra LLM call for document-level analysis (costs 1 API call)")
+    p.add_argument("--validate",  action="store_true",
+                   help="Run second-pass LLM validation for extracted obligations")
     p.add_argument("--db",        default="", metavar="PATH",
                    help="Save to SQLite DB at this path (optional)")
     args = p.parse_args()
@@ -190,7 +196,7 @@ def main():
             model=args.model,
             batch_size=args.batch_size,
             output_dir=args.out,
-            run_analysis=args.analyze,
+            run_analysis=args.analyze or args.validate,
             db_path=args.db
         )
     except FileNotFoundError as e:

@@ -65,3 +65,88 @@ def test_regulator_discovery_extracts_document_links(monkeypatch):
     assert links[0]["regulator"] == "RBI"
     assert links[0]["title"] == "RBI Circular"
     assert links[0]["url"] == "https://example.test/docs/circular.pdf"
+
+
+def test_task_completion_updates_parent_obligation(tmp_path):
+    reset_runtime(tmp_path)
+    seed_task_tables()
+
+    task = api.mark_task_complete_runtime(1, "EV-1")
+
+    assert task["taskStatus"] == "completed"
+    assert task["evidenceSubmitted"] == "EV-1"
+    rows = api.list_tasks()
+    assert rows[0]["obligationStatus"] == "completed"
+
+
+def test_close_tasks_for_map_card_matches_action_and_department(tmp_path):
+    reset_runtime(tmp_path)
+    seed_task_tables()
+
+    card = {
+        "id": "MAP-1",
+        "summary": "Enable MFA for high-risk transactions",
+        "assignedDepartments": ["Digital Banking"],
+        "severity": "high",
+    }
+
+    completed = api.close_tasks_for_map_card(card, "EV-2")
+
+    assert len(completed) == 1
+    assert completed[0]["taskStatus"] == "completed"
+    assert completed[0]["evidenceSubmitted"] == "EV-2"
+
+
+def seed_task_tables():
+    with api.connect_runtime_db() as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS obligations (
+                id INTEGER PRIMARY KEY,
+                document_id INTEGER,
+                actor TEXT,
+                action TEXT,
+                deadline TEXT,
+                mandatory INTEGER,
+                domain TEXT,
+                department TEXT,
+                evidence_required TEXT,
+                severity TEXT,
+                source_section TEXT,
+                source_page INTEGER,
+                review_flag TEXT,
+                status TEXT
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY,
+                obligation_id INTEGER,
+                assigned_department TEXT,
+                status TEXT,
+                evidence_submitted TEXT,
+                submitted_at TEXT
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO obligations (
+                id, document_id, actor, action, deadline, mandatory, domain, department,
+                evidence_required, severity, source_section, source_page, review_flag, status
+            )
+            VALUES (
+                1, 1, 'Bank', 'Enable MFA for high-risk transactions', 'within 30 days',
+                1, 'Digital Banking', '["Digital Banking"]', '["MFA screenshot"]',
+                'high', 'SEC-1', 1, NULL, 'pending'
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO tasks (id, obligation_id, assigned_department, status, evidence_submitted, submitted_at)
+            VALUES (1, 1, 'Digital Banking', 'pending', NULL, NULL)
+            """
+        )
