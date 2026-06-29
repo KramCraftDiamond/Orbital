@@ -363,7 +363,7 @@ async function pollPipelineJob(jobId: string, setSteps: React.Dispatch<React.Set
     await waitForMockStage(3000);
   }
 
-  throw new Error("Pipeline timed out while waiting for backend job completion.");
+  throw new Error("Pipeline timed out after 20 minutes. The document may be too large — try a smaller batch size or check the backend logs.");
 }
 
 async function refreshAuditEvents(
